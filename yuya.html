@@ -1,0 +1,3076 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>雨夜書架</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700&family=Noto+Sans+JP:wght@400;500&family=Noto+Serif+SC:wght@300;400;500&family=IM+Fell+English:ital@0;1&display=swap');
+
+:root {
+  --bg: #0e0c0a;
+  --surface: #161310;
+  --surface2: #1e1a16;
+  --surface3: #252018;
+  --ink: #e8e0d0;
+  --ink2: #9a9080;
+  --ink3: #5a5248;
+  --acc: #c4956a;
+  --acc2: #8b5e3c;
+  --acc3: #e8c89a;
+  --bdr: #2a2420;
+  --bdr2: #3a3028;
+  --red: #c0392b;
+  --green: #5a8a5a;
+  --sh: rgba(0,0,0,.5);
+  --panel: #161310;
+}
+[data-theme=light]{
+  --bg:#f0ebe2;--surface:#faf6f0;--surface2:#f0ebe2;--surface3:#e8e0d4;
+  --ink:#2c2417;--ink2:#7a6a58;--ink3:#b0a090;
+  --acc:#8b5e3c;--acc2:#c4956a;--acc3:#5a3a20;
+  --bdr:#ddd4c0;--bdr2:#ccc0a8;--panel:#faf6f0;
+  --sh:rgba(44,36,23,.15);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink)}
+body{font-family:'Noto Serif SC','Noto Serif JP',serif;transition:background .3s,color .3s}
+/* 中文UI强制SC字形 */
+.cn-trans,#va-cn,.vc-cn,.cm-text,.fic-summary-box,button,label,div.tag,div.tbtn{font-family:'Noto Serif SC','Noto Serif JP',serif}
+
+/* ── SCREENS ── */
+.scr{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);z-index:1}
+.scr.off{display:none}
+
+/* ── TOPBAR ── */
+.tbar{display:flex;align-items:center;gap:8px;padding:11px 16px;background:var(--surface);border-bottom:1px solid var(--bdr);flex-shrink:0}
+.tbar-title{flex:1;font-family:'IM Fell English',serif;font-size:17px;color:var(--acc3);letter-spacing:.05em;font-weight:400}
+.tbar-sub{font-size:11px;color:var(--ink3);letter-spacing:.1em}
+.tbtn{background:none;border:1px solid var(--bdr);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--ink2);cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.tbtn:active{opacity:.7}
+.tbtn.acc{background:var(--acc);border-color:var(--acc);color:#fff}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:1px solid var(--bdr);flex-shrink:0;background:var(--surface)}
+.tab{flex:1;padding:10px 0;text-align:center;font-size:13px;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+
+/* ── SCROLL BODY ── */
+.body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.body-pad{padding:16px;display:flex;flex-direction:column;gap:14px}
+
+/* ── SEARCH SCREEN ── */
+.tag-section{background:var(--surface);border:1px solid var(--bdr);border-radius:10px;padding:14px}
+.tag-section-title{font-size:11px;color:var(--ink3);letter-spacing:.1em;margin-bottom:10px;text-transform:uppercase}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
+.tag{background:var(--surface2);border:1px solid var(--bdr);border-radius:16px;padding:5px 12px;font-size:12px;color:var(--ink2);cursor:pointer;transition:all .15s;user-select:none}
+.tag.on{background:var(--acc2);border-color:var(--acc);color:var(--ink)}
+.tag.del-mode::after{content:'×';margin-left:5px;color:var(--red);opacity:.7}
+.tag-input-row{display:flex;gap:8px;margin-top:10px}
+.tag-input{flex:1;background:var(--surface2);border:1px solid var(--bdr);border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;color:var(--ink);outline:none}
+.tag-input:focus{border-color:var(--acc2)}
+.tag-add-btn{background:var(--acc2);border:none;border-radius:8px;padding:8px 14px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit}
+
+.search-btn{background:var(--acc);border:none;border-radius:10px;padding:14px;font-size:15px;font-family:inherit;color:var(--ink);cursor:pointer;width:100%;letter-spacing:.05em;transition:opacity .2s}
+.search-btn:disabled{opacity:.4}
+
+/* ── AO3 CARD ── */
+.ao3-card{background:var(--surface);border:1px solid var(--bdr);border-radius:10px;padding:14px;cursor:pointer;transition:border-color .2s;position:relative}
+.ao3-card:active{opacity:.85}
+.ao3-card.selected{border-color:var(--acc)}
+.ao3-card .c-title{font-size:16px;color:var(--acc3);margin-bottom:6px;line-height:1.4}
+.ao3-card .c-title-jp{font-size:13px;color:var(--acc2);margin-bottom:8px;font-family:'Noto Serif JP',serif}
+.ao3-card .c-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.ao3-card .c-tag{background:var(--surface3);border:1px solid var(--bdr2);border-radius:10px;padding:2px 8px;font-size:11px;color:var(--ink3)}
+.ao3-card .c-tag.warn{border-color:#8b3a2a;color:#c4756a}
+.ao3-card .c-meta{font-size:11px;color:var(--ink3);margin-bottom:8px}
+.ao3-card .c-summary{font-size:13px;color:var(--ink2);line-height:1.7}
+.ao3-card .c-badge{position:absolute;top:12px;right:12px;background:var(--acc2);border-radius:4px;padding:2px 7px;font-size:11px;color:var(--ink)}
+
+.generate-btn{background:var(--surface2);border:1px solid var(--acc2);border-radius:10px;padding:13px;font-size:14px;font-family:inherit;color:var(--acc);cursor:pointer;width:100%;transition:all .2s}
+.generate-btn:active{background:var(--acc2)}
+.generate-btn:disabled{opacity:.4}
+
+/* ── READER ── */
+#scr-reader .tbar .r-title{flex:1;font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.chapter-tabs{display:flex;gap:0;border-bottom:1px solid var(--bdr);flex-shrink:0;background:var(--surface);overflow-x:auto}
+.ch-tab{flex-shrink:0;padding:9px 16px;font-size:12px;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.ch-tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+
+#reader-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--surface);padding:20px 18px 40px}
+
+/* AO3 Header in reader */
+.fic-header{margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--bdr)}
+.fic-title{font-family:'IM Fell English',serif;font-size:22px;color:var(--acc3);margin-bottom:4px;line-height:1.3}
+.fic-title-jp{font-size:14px;color:var(--acc2);margin-bottom:12px;font-family:'Noto Serif JP',serif}
+.fic-meta{font-size:11px;color:var(--ink3);line-height:2;margin-bottom:10px}
+.fic-tags-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.fic-tag{background:var(--surface2);border:1px solid var(--bdr);border-radius:10px;padding:3px 10px;font-size:11px;color:var(--ink3)}
+.fic-tag.warn{border-color:#8b3a2a;color:#c4756a}
+.fic-summary-box{background:var(--surface2);border-left:3px solid var(--acc2);padding:10px 14px;border-radius:0 6px 6px 0;font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:12px}
+.fic-an{background:var(--surface3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--ink3);line-height:1.7;font-style:italic}
+.fic-an-label{font-size:10px;color:var(--acc2);letter-spacing:.1em;margin-bottom:4px;font-style:normal}
+
+/* Chapter content */
+.ch-divider{text-align:center;color:var(--ink3);font-size:13px;letter-spacing:.3em;margin:20px 0}
+.cn-trans{display:block;font-size:11.5px;color:var(--ink3);font-style:italic;margin-top:1px;margin-bottom:10px;padding-left:.5em;line-height:1.5;letter-spacing:.01em}
+.word-saved{background:rgba(100,149,196,.15);border-radius:2px;border-bottom:1px solid #6495c4;cursor:pointer}
+.word-injected{background:rgba(196,149,106,.25);border-radius:2px;border-bottom:2px solid var(--acc3);cursor:pointer}
+.ch-content{font-size:16px;line-height:2.1;color:var(--ink);letter-spacing:.02em}
+.ch-content p{margin-bottom:1.2em;text-indent:1em}
+.ch-content p:hover{background:rgba(196,149,106,.07);border-radius:3px;cursor:pointer}
+.ch-content p.sel{background:rgba(196,149,106,.16);border-radius:3px}
+
+/* Vocab list */
+.vocab-box{margin-top:24px;padding-top:20px;border-top:1px solid var(--bdr)}
+.vocab-box-title{font-size:11px;color:var(--ink3);letter-spacing:.1em;margin-bottom:12px;text-transform:uppercase}
+.vocab-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr)}
+.vocab-item:last-child{border-bottom:none}
+.vi-word{font-size:16px;color:var(--acc3);font-family:'Noto Serif JP',serif;min-width:60px;flex-shrink:0}
+.vi-ruby{font-size:11px;color:var(--ink3);margin-top:2px}
+.vi-info{flex:1}
+.vi-cn{font-size:13px;color:var(--ink2)}
+.vi-ex{font-size:12px;color:var(--ink3);margin-top:3px;line-height:1.6;font-style:italic}
+.vi-save{background:none;border:1px solid var(--bdr);border-radius:12px;padding:3px 8px;font-size:11px;color:var(--ink3);cursor:pointer;flex-shrink:0;white-space:nowrap}
+.vi-save.saved{border-color:var(--green);color:var(--green)}
+
+/* Comments section */
+.comments-box{margin-top:24px}
+.comments-title{font-size:11px;color:var(--ink3);letter-spacing:.1em;margin-bottom:12px;text-transform:uppercase}
+.comment-item{padding:10px 0;border-bottom:1px solid var(--bdr)}
+.comment-item:last-child{border-bottom:none}
+.cm-header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.cm-user{font-size:12px;color:var(--acc2)}
+.cm-date{font-size:11px;color:var(--ink3)}
+.cm-text{font-size:13px;color:var(--ink2);line-height:1.7}
+
+/* Reader toolbar */
+#reader-toolbar{display:flex;align-items:center;justify-content:space-around;padding:8px 0 10px;background:var(--surface);border-top:1px solid var(--bdr);flex-shrink:0}
+.rtbico{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:20px;color:var(--ink2);cursor:pointer;padding:4px 10px;font-family:inherit}
+.rtbico span{font-size:10px;color:var(--ink3)}
+
+/* ── BOOKSHELF ── */
+.shelf-card{background:var(--surface);border:1px solid var(--bdr);border-radius:10px;padding:14px;display:flex;gap:12px;cursor:pointer;transition:border-color .2s}
+.shelf-card:active{opacity:.8}
+.shelf-card.fav{border-color:var(--acc2)}
+.sc-cover{width:48px;height:64px;border-radius:4px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden}
+.sc-info{flex:1;min-width:0}
+.sc-title{font-size:14px;color:var(--acc3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-title-jp{font-size:11px;color:var(--acc2);margin-top:2px;font-family:'Noto Serif JP',serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.sc-tag{background:var(--surface3);border-radius:8px;padding:2px 7px;font-size:10px;color:var(--ink3)}
+.sc-del{background:none;border:none;font-size:18px;color:var(--ink3);cursor:pointer;padding:4px;align-self:flex-start;flex-shrink:0}
+
+/* ── VOCAB SCREEN ── */
+.vocab-filter{display:flex;gap:8px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--bdr);flex-shrink:0}
+.vf-btn{flex:1;background:none;border:1px solid var(--bdr);border-radius:8px;padding:8px 0;font-size:12px;color:var(--ink2);cursor:pointer;font-family:inherit;text-align:center}
+.vf-btn.on{background:var(--acc2);border-color:var(--acc);color:var(--ink)}
+
+.vocab-card{background:var(--surface);border:1px solid var(--bdr);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.vc-word{font-size:22px;color:var(--acc3);font-family:'Noto Serif JP',serif}
+.vc-ruby{font-size:12px;color:var(--ink3)}
+.vc-cn{font-size:14px;color:var(--ink2)}
+.vc-source{font-size:11px;color:var(--ink3);font-style:italic;cursor:pointer;text-decoration:underline;text-decoration-color:var(--bdr)}
+.vc-examples{display:flex;flex-direction:column;gap:6px}
+.vc-ex-item{background:var(--surface2);border-radius:6px;padding:8px 10px;font-size:12px;color:var(--ink3);line-height:1.7;cursor:pointer}
+.vc-ex-item:active{background:var(--surface3)}
+.vc-actions{display:flex;gap:8px}
+.vc-act{flex:1;background:none;border:1px solid var(--bdr);border-radius:8px;padding:8px 0;font-size:12px;color:var(--ink2);cursor:pointer;font-family:inherit;text-align:center}
+.vc-act.done{border-color:var(--green);color:var(--green)}
+.vc-act.del{border-color:var(--red);color:var(--red)}
+
+/* ── SETTINGS ── */
+.sg{background:var(--surface);border:1px solid var(--bdr);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.sgt{font-size:11px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase}
+.sr{display:flex;flex-direction:column;gap:5px}
+.sr label{font-size:13px;color:var(--ink2)}
+.sr input,.sr textarea,.sr select{border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;background:var(--surface2);color:var(--ink);outline:none;width:100%}
+.sr textarea{resize:vertical;min-height:70px;line-height:1.7}
+.sr input:focus,.sr textarea:focus{border-color:var(--acc2)}
+.sbtn{background:var(--acc);color:var(--ink);border:none;border-radius:10px;padding:13px;font-size:14px;font-family:inherit;cursor:pointer;width:100%}
+.s2btn{background:none;color:var(--ink2);border:1px solid var(--bdr);border-radius:10px;padding:11px;font-size:13px;font-family:inherit;cursor:pointer;width:100%}
+.pitem{display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--bdr);cursor:pointer}
+.pitem.on{border-color:var(--acc2)}
+.pitem .pn{flex:1;font-size:13px}
+.pitem .pu{font-size:11px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px}
+.pdel{background:none;border:none;font-size:17px;color:var(--ink3);cursor:pointer;padding:2px 4px}
+.mrow{display:flex;gap:8px}
+.mrow select{flex:1;border:1px solid var(--bdr);border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;background:var(--surface2);color:var(--ink);outline:none}
+.fbtn{border:1px solid var(--bdr);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--ink2);background:var(--surface2);cursor:pointer;font-family:inherit;white-space:nowrap}
+
+/* ── CHAT SHEET ── */
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-radius:18px 18px 0 0;box-shadow:0 -4px 30px var(--sh);z-index:300;transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;max-height:80dvh}
+.sheet.on{transform:translateY(0)}
+.sh{width:36px;height:4px;background:var(--bdr);border-radius:2px;margin:10px auto 4px;flex-shrink:0}
+.shd{display:flex;align-items:center;padding:4px 16px 10px;flex-shrink:0}
+.shd h3{flex:1;font-size:15px;font-weight:400;color:var(--acc3)}
+.shx{background:none;border:none;font-size:22px;color:var(--ink3);cursor:pointer;padding:4px}
+
+#cquote{margin:0 14px 6px;padding:8px 12px;background:rgba(196,149,106,.08);border-left:3px solid var(--acc2);border-radius:0 6px 6px 0;font-size:12px;color:var(--ink2);line-height:1.7;max-height:56px;overflow:hidden;display:none}
+#cquote.on{display:block}
+#msgs{flex:1;overflow-y:auto;padding:6px 14px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
+.msg{max-width:84%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.75;word-break:break-word}
+.msg-wrap{display:flex;flex-direction:column}
+.msg-wrap.right{align-items:flex-end}
+.msg-wrap.left{align-items:flex-start}
+.msg-wrap.center{align-items:center}
+.msg.u{background:var(--surface3);border-bottom-right-radius:4px}
+.msg.c{background:var(--surface2);border:1px solid var(--bdr);border-bottom-left-radius:4px}
+.msg.s{background:none;font-size:11px;color:var(--ink3);font-style:italic}
+.msg.t{background:var(--surface2);border:1px solid var(--bdr);color:var(--ink3);font-style:italic}
+.mlbl{font-size:11px;color:var(--acc2);margin-bottom:2px;padding-left:2px}
+.ulbl{font-size:11px;color:var(--ink3);margin-bottom:2px;padding-right:2px}
+#cinput-row{display:flex;align-items:flex-end;gap:6px;padding:8px 12px 14px;border-top:1px solid var(--bdr);flex-shrink:0}
+#uinput{flex:1;border:1px solid var(--bdr);border-radius:18px;padding:10px 14px;font-size:14px;font-family:inherit;background:var(--surface2);color:var(--ink);resize:none;max-height:100px;line-height:1.5;outline:none}
+#uinput:focus{border-color:var(--acc2)}
+.ci-btn{width:38px;height:38px;border-radius:50%;border:none;font-size:17px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.ci-btn:active{transform:scale(.88)}
+#queue-btn{background:var(--surface3);color:var(--ink2);border:1px solid var(--bdr)}
+#queue-btn.has{background:var(--acc2);color:var(--ink);border-color:var(--acc)}
+.ci-send{background:var(--acc);color:var(--bg)}
+.ci-send:disabled{background:var(--bdr)}
+
+/* fullpanel */
+.fp{position:fixed;inset:0;background:var(--bg);z-index:400;display:none;flex-direction:column}
+.fp.on{display:flex}
+.fph{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--bdr);flex-shrink:0}
+.fph h2{flex:1;font-size:16px;font-weight:400}
+.fpb{background:none;border:1px solid var(--bdr);border-radius:7px;padding:6px 11px;font-size:13px;color:var(--ink2);cursor:pointer;font-family:inherit}
+.fpbody{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+
+/* overlay */
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none}
+#ov.on{display:block}
+
+/* loading */
+.loading-dots::after{content:'';animation:dots 1.2s steps(4,end) infinite}
+@keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}100%{content:''}}
+
+/* toast */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--ink);color:var(--bg);padding:8px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all .28s;z-index:9999;white-space:nowrap;pointer-events:none}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
+::-webkit-scrollbar-track{background:transparent}
+#vocab-inject-toggle:checked+#vocab-inject-slider{background:var(--acc)}
+#vocab-inject-slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.2s}
+#vocab-inject-toggle:checked+#vocab-inject-slider::before{transform:translateX(20px)}
+</style>
+</head>
+<body>
+
+<!-- ══ SEARCH SCREEN ══ -->
+<div class="scr" id="scr-search" style="display:flex;flex-direction:column;height:100dvh">
+  <div class="tbar">
+    <div>
+      <div class="tbar-title">雨夜書架</div>
+      <div class="tbar-sub">日語同人學習</div>
+    </div>
+    <button class="tbtn" id="btn-theme">☀️</button>
+    <button class="tbtn" id="btn-cfg-open">設定</button>
+  </div>
+  <div class="tabs">
+    <div class="tab on" data-tab="search">探索</div>
+    <div class="tab" data-tab="shelf">書架</div>
+    <div class="tab" data-tab="vocab">単語帳</div>
+  </div>
+
+  <!-- SEARCH TAB -->
+  <div id="tab-search" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="body-pad">
+
+      <div class="tag-section">
+        <div class="tag-section-title">内容標籤</div>
+        <div class="tag-row" id="content-tags"></div>
+        <div class="tag-input-row">
+          <input class="tag-input" id="new-content-tag" placeholder="添加自定义内容标签…">
+          <button class="tag-add-btn" id="add-content-tag">+</button>
+        </div>
+      </div>
+
+      <div class="tag-section">
+        <div class="tag-section-title">風格標籤</div>
+        <div class="tag-row" id="style-tags"></div>
+        <div class="tag-input-row">
+          <input class="tag-input" id="new-style-tag" placeholder="添加自定义风格标签…">
+          <button class="tag-add-btn" id="add-style-tag">+</button>
+        </div>
+      </div>
+
+      <div class="tag-section">
+        <div class="tag-section-title">學習重點</div>
+        <div class="tag-row" id="learn-tags"></div>
+        <div class="tag-input-row">
+          <input class="tag-input" id="new-learn-tag" placeholder="添加自定义学习重点…">
+          <button class="tag-add-btn" id="add-learn-tag">+</button>
+        </div>
+      </div>
+
+      <button class="search-btn" id="search-btn">✦ 生成梗概</button>
+
+
+      <!-- Search History -->
+      <div id="history-section" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:11px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase">搜索历史</div>
+          <button class="tbtn" id="clear-history-btn" style="font-size:11px;padding:3px 8px;color:var(--red)">清空历史</button>
+        </div>
+        <div id="history-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <!-- Results -->
+      <div id="results-section" style="display:none;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="flex:1;font-size:11px;color:var(--ink3)" id="results-label">第1页 · 5篇梗概</div>
+          <button class="tbtn" id="next-page-btn" style="font-size:12px">下一页 →</button>
+          <button class="tbtn" id="regen-btn" style="font-size:12px;color:var(--red)">重新生成</button>
+        </div>
+        <div id="outline-inject-preview" style="display:none;flex-wrap:wrap;gap:6px;align-items:center"></div>
+        <div id="search-results" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+
+      <!-- vocab-inject-toggle：保留逻辑，UI统一在词库tab -->
+      <input type="checkbox" id="vocab-inject-toggle" style="display:none">
+      <div id="vocab-inject-preview" style="display:none"></div>
+      <div id="vocab-inject-count" style="display:none"></div>
+      <button class="generate-btn" id="gen-full-btn" style="display:none">📖 生成完整正文</button>
+    </div>
+  </div>
+
+  <!-- SHELF TAB -->
+  <div id="tab-shelf" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none">
+    <div class="body-pad" id="shelf-list"></div>
+  </div>
+
+  <!-- VOCAB TAB -->
+  <div id="tab-vocab" style="flex:1;overflow:hidden;display:none;flex-direction:column">
+    <div class="vocab-filter" style="flex-shrink:0">
+      <button class="vf-btn on" data-vf="all">全部</button>
+      <button class="vf-btn" data-vf="learning">学习中</button>
+      <button class="vf-btn" data-vf="mastered">已掌握</button>
+    </div>
+    <!-- 复习 + 再生成入口 -->
+    <div style="margin:10px 14px 0;display:flex;flex-direction:column;gap:8px" id="vocab-actions">
+      <div id="srs-banner" style="display:none;background:var(--acc2);border-radius:10px;padding:12px 16px;cursor:pointer">
+        <div style="font-size:14px;color:var(--ink);letter-spacing:.03em">✦ 今日复习 <span id="srs-count" style="font-weight:500">0</span> 个词</div>
+        <div style="font-size:11px;color:var(--ink2);margin-top:3px">点击开始</div>
+      </div>
+      <div id="regen-banner" style="display:none;background:var(--surface2);border:1px solid var(--bdr);border-radius:10px;padding:12px 16px;cursor:pointer">
+        <div style="font-size:14px;color:var(--ink)">♻ 用词库生词再生成同人文</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:3px" id="regen-banner-info">加载中…</div>
+      </div>
+    </div>
+    <div class="body" style="flex:1">
+      <div class="body-pad" id="vocab-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ READER SCREEN ══ -->
+<div class="scr off" id="scr-reader">
+  <div class="tbar">
+    <button class="tbtn" id="btn-back-reader">← 返回</button>
+    <div class="r-title" id="r-title" style="flex:1;font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</div>
+    <button class="tbtn" id="btn-fav" title="收藏">☆</button>
+  </div>
+  <div class="chapter-tabs" id="chapter-tabs"></div>
+  <div class="body" id="reader-body"></div>
+  <div id="reader-toolbar">
+    <button class="rtbico" id="btn-chat-open">💬<span>问角色</span></button>
+    <button class="rtbico" id="btn-vocab-add">📚<span>存生词</span></button>
+    <button class="rtbico" id="btn-reroll-ch">↺<span>重新生成</span></button>
+    <button class="rtbico" id="btn-next-chapter" style="display:none">✦<span>下一章</span></button>
+    <button class="rtbico" id="btn-theme2">🌙<span>夜间</span></button>
+  </div>
+</div>
+
+<!-- ══ VOCAB ADD SHEET ══ -->
+<div class="sheet" id="vocab-add-sheet" style="height:auto;max-height:70dvh">
+  <div class="sh"></div>
+  <div class="shd">
+    <h3>存入词库</h3>
+    <button class="shx" id="close-vocab-add">×</button>
+  </div>
+  <div style="padding:0 16px 8px;font-size:12px;color:var(--ink3);background:var(--surface2);margin:0 14px;border-radius:8px;line-height:1.7" id="vocab-add-quote"></div>
+  <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">
+    <div class="sr"><label>生词（选中的词，可修改）</label>
+      <input type="text" id="va-word" placeholder="例：鬱陶しい"></div>
+    <div class="sr">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <label style="margin:0">读音（假名）</label>
+        <button id="va-requery" style="background:none;border:none;font-size:12px;color:var(--acc2);cursor:pointer;padding:0;font-family:inherit">↺ 重新查询读音释义</button>
+      </div>
+      <input type="text" id="va-ruby" placeholder="例：うっとうしい">
+    </div>
+    <div class="sr"><label>中文释义</label>
+      <input type="text" id="va-cn" placeholder="例：令人烦闷，阴郁"></div>
+    <div style="font-size:12px;color:var(--ink3)">例句将自动保存为选中的那句话</div>
+    <button class="sbtn" id="va-save-btn" style="margin-bottom:8px">存入词库</button>
+  </div>
+</div>
+
+<!-- ══ CHAT SHEET ══ -->
+<div class="sheet" id="chat-sheet" style="height:72dvh">
+  <div class="sh"></div>
+  <div class="shd">
+    <h3 id="chat-cname">角色</h3>
+    <button class="shx" id="close-chat">×</button>
+  </div>
+  <div id="cquote"></div>
+  <div id="msgs"></div>
+  <div id="cinput-row">
+    <textarea id="uinput" rows="1" placeholder="问点什么…"></textarea>
+    <button id="queue-btn" class="ci-btn" title="加入队列">+</button>
+    <button id="send-btn" class="ci-btn ci-send" title="发送并请求回复">✦</button>
+  </div>
+</div>
+
+<!-- ══ SETTINGS PANEL ══ -->
+<div class="fp" id="cfg-panel">
+  <div class="fph">
+    <button class="fpb" id="close-cfg">← 返回</button>
+    <h2>設定</h2>
+  </div>
+  <div class="fpbody">
+
+    <div class="sg">
+      <div class="sgt">API 預設</div>
+      <div id="plist" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="sr"><label>预设名称</label><input type="text" id="np-name" placeholder="例：主力站"></div>
+        <div class="sr"><label>Base URL</label><input type="url" id="np-url" placeholder="https://xxx.com/v1"></div>
+        <div class="sr"><label>API Key</label><input type="password" id="np-key" placeholder="sk-..."></div>
+        <button class="sbtn" id="add-preset" style="padding:11px">+ 添加预设</button>
+      </div>
+    </div>
+
+    <div class="sg">
+      <div class="sgt">模型</div>
+      <div class="mrow">
+        <select id="m-sel" style="flex:1;border:1px solid var(--bdr);border-radius:8px;padding:9px;font-size:14px;font-family:inherit;background:var(--surface2);color:var(--ink);outline:none"><option value="">— 先拉取模型 —</option></select>
+        <button class="fbtn" id="fetch-m">拉取</button>
+      </div>
+      <div class="sr"><label>或手动输入</label><input type="text" id="m-manual" placeholder="claude-3-5-sonnet-20241022 …"></div>
+    </div>
+
+    <div class="sg">
+      <div class="sgt">角色管理</div>
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:10px;line-height:1.7">添加多个角色，生成时从书架选择使用哪些。</div>
+      <div id="char-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;background:var(--surface2);border:1px solid var(--bdr);border-radius:10px;padding:12px">
+        <div style="font-size:12px;color:var(--acc2);margin-bottom:2px">添加 / 编辑角色</div>
+        <div class="sr"><label>角色名字</label><input type="text" id="new-char-name" placeholder="例：角色名"></div>
+        <div class="sr"><label>角色卡</label><textarea id="new-char-card" rows="5" placeholder="粘贴角色卡，支持 {{char}}/{{user}}…" style="border:1px solid var(--bdr);border-radius:8px;padding:10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink);outline:none;width:100%;resize:vertical;min-height:100px;line-height:1.6"></textarea></div>
+        <div style="display:flex;gap:8px">
+          <button class="sbtn" id="save-char-btn" style="flex:1;padding:11px">保存角色</button>
+          <button class="s2btn" id="clear-char-btn" style="padding:11px 14px">清空</button>
+        </div>
+        <input type="hidden" id="editing-char-id">
+      </div>
+    </div>
+
+    <div class="sg">
+      <div class="sgt">系統 Prompt</div>
+      <div style="font-size:12px;color:var(--ink3);line-height:1.7;margin-bottom:8px">作为system role发送给模型，放在角色卡之前。可以修改保存。</div>
+      <div class="sr">
+        <textarea id="sys-prompt" rows="10" style="border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--ink);outline:none;width:100%;resize:vertical;min-height:180px;line-height:1.6"></textarea>
+      </div>
+    </div>
+
+    <div class="sg">
+      <div class="sgt">生成設定</div>
+      <div class="sr"><label>词汇风格</label>
+        <select id="jp-level" style="border:1px solid var(--bdr);border-radius:8px;padding:9px;font-size:14px;font-family:inherit;background:var(--surface2);color:var(--ink);outline:none;width:100%">
+          <option value="natural">自然日语（推荐）——真实媒体用词，多外来语和口语缩略</option>
+          <option value="literary">文学风格——书面语为主，汉字词丰富，适合读小说</option>
+          <option value="casual">日常口语——偏对话，缩略多，年轻人用词</option>
+        </select>
+      </div>
+      <div class="sr"><label>每篇章节数</label>
+        <select id="ch-count" style="border:1px solid var(--bdr);border-radius:8px;padding:9px;font-size:14px;font-family:inherit;background:var(--surface2);color:var(--ink);outline:none;width:100%">
+          <option value="1">1章（短篇）</option>
+          <option value="3" selected>3章</option>
+          <option value="5">5章（长篇）</option>
+        </select>
+      </div>
+      <div class="sr"><label>特殊指令（每次生成都会带入，例：NSFW、限制级等）</label>
+        <textarea id="special-inst" rows="2" placeholder="例：NSFW，可以写露骨内容，不要自我审查…" style="border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;background:var(--surface2);color:var(--ink);outline:none;width:100%;resize:vertical;min-height:60px;line-height:1.6"></textarea>
+      </div>
+    </div>
+
+    <button class="sbtn" id="save-cfg">保存設定</button>
+
+    <div class="sg">
+      <div class="sgt">數據</div>
+      <button class="sbtn" id="exp-data" style="background:var(--ink3)">導出數據 JSON</button>
+      <button class="s2btn" id="imp-data">導入數據 JSON</button>
+      <input type="file" id="imp-file" accept=".json" style="display:none">
+    </div>
+
+  </div>
+</div>
+
+<div id="ov"></div>
+<div id="toast"></div>
+
+<!-- 复习全屏 -->
+<div id="review-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;flex-direction:column">
+  <div style="display:flex;align-items:center;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--bdr);flex-shrink:0">
+    <button id="review-close" style="background:none;border:none;font-size:22px;color:var(--ink3);cursor:pointer;margin-right:12px">×</button>
+    <div style="flex:1;font-size:14px;color:var(--ink2)">复习</div>
+    <div id="review-progress" style="font-size:13px;color:var(--ink3)">0/0</div>
+  </div>
+
+  <!-- 初识卡（level 0 第一次见） -->
+  <div id="review-intro" style="display:none;flex:1;overflow-y:auto;padding:20px 16px;flex-direction:column;gap:16px">
+    <div style="font-size:12px;color:var(--ink3);text-align:center;letter-spacing:.1em">认识一下</div>
+    <div style="background:var(--surface);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <div style="font-size:28px;font-family:'Noto Serif JP',serif;color:var(--acc3)" id="ri-word"></div>
+        <div style="font-size:15px;color:var(--ink3)" id="ri-ruby"></div>
+      </div>
+      <div style="font-size:16px;color:var(--ink)" id="ri-cn"></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;font-family:'Noto Serif JP',serif;font-size:14px;line-height:2;color:var(--ink2)" id="ri-example"></div>
+    </div>
+    <button id="ri-next" style="background:var(--acc);border:none;border-radius:12px;padding:14px;font-size:15px;font-family:inherit;color:var(--bg);cursor:pointer">记住了，开始练习 →</button>
+  </div>
+
+  <!-- 填空卡 -->
+  <div id="review-quiz" style="display:none;flex:1;overflow-y:auto;padding:20px 16px;flex-direction:column;gap:14px">
+    <div style="font-size:12px;color:var(--ink3);text-align:center;letter-spacing:.1em">填入正确的假名或汉字</div>
+    <div id="rq-sentence" style="background:var(--surface);border-radius:12px;padding:18px;font-family:'Noto Serif JP',serif;font-size:15px;line-height:2.2;color:var(--ink);text-align:center"></div>
+    <div style="font-size:14px;color:var(--ink3);text-align:center">提示：<span id="rq-hint" style="color:var(--acc2)"></span></div>
+    <input type="text" id="rq-input" style="border:2px solid var(--bdr);border-radius:12px;padding:14px 16px;font-size:18px;font-family:'Noto Serif JP',serif;background:var(--surface2);color:var(--ink);outline:none;text-align:center;width:100%" placeholder="输入假名或词…">
+    <button id="rq-submit" style="background:var(--acc);border:none;border-radius:12px;padding:14px;font-size:15px;font-family:inherit;color:var(--bg);cursor:pointer">确认</button>
+
+    <!-- 结果展示（答错时）-->
+    <div id="rq-result" style="display:none;background:var(--surface);border-radius:12px;padding:16px;flex-direction:column;gap:10px">
+      <div id="rq-result-label" style="font-size:16px;font-weight:500;color:var(--red)">✗ 答错了</div>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <div style="font-size:22px;font-family:'Noto Serif JP',serif;color:var(--acc3)" id="rq-word"></div>
+        <div style="font-size:13px;color:var(--ink3)" id="rq-ruby-ans"></div>
+      </div>
+      <div style="font-size:14px;color:var(--ink2)" id="rq-cn-ans"></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-family:'Noto Serif JP',serif;font-size:13px;line-height:2;color:var(--ink2)" id="rq-example-ans"></div>
+      <button id="rq-wrong" style="background:none;border:1px solid var(--bdr);border-radius:10px;padding:12px;font-size:14px;font-family:inherit;color:var(--ink2);cursor:pointer;width:100%">下一个 →</button>
+    </div>
+
+    <!-- 造句区（答对后强制出现）-->
+    <div id="rq-compose" style="display:none;background:var(--surface);border-radius:12px;padding:16px;flex-direction:column;gap:12px">
+      <div style="font-size:13px;color:var(--green);font-weight:500">✓ 答对了！用「<span id="rqc-word"></span>」造一个句子</div>
+      <div style="font-size:12px;color:var(--ink3);line-height:1.7">用日语写，哪怕很短也可以。写完AI来批改。</div>
+      <textarea id="rqc-input" style="border:2px solid var(--bdr);border-radius:10px;padding:12px;font-size:15px;font-family:'Noto Serif JP',serif;background:var(--surface2);color:var(--ink);outline:none;width:100%;resize:none;min-height:80px;line-height:1.8" placeholder="例：今日はウールのセーターを着た。"></textarea>
+      <button id="rqc-submit" style="background:var(--acc);border:none;border-radius:10px;padding:13px;font-size:14px;font-family:inherit;color:var(--bg);cursor:pointer">提交批改</button>
+      <!-- 批改结果 -->
+      <div id="rqc-feedback" style="display:none;background:var(--surface2);border-radius:10px;padding:14px;font-size:13px;line-height:1.9;color:var(--ink2)"></div>
+      <button id="rqc-next" style="display:none;background:none;border:1px solid var(--bdr);border-radius:10px;padding:12px;font-size:14px;font-family:inherit;color:var(--ink2);cursor:pointer">下一个 →</button>
+    </div>
+  </div>
+
+  <!-- 完成页 -->
+  <div id="review-done" style="display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:20px">
+    <div style="font-size:48px">✦</div>
+    <div style="font-size:20px;color:var(--ink)">今日复习完成！</div>
+    <div id="review-done-stats" style="font-size:14px;color:var(--ink3);text-align:center;line-height:2"></div>
+    <button id="review-done-close" style="background:var(--acc);border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-family:inherit;color:var(--bg);cursor:pointer">返回词库</button>
+  </div>
+</div>
+
+<!-- 再生成弹窗 -->
+<div id="regen-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:600;align-items:flex-end;justify-content:center">
+  <div style="background:var(--bg);border-radius:18px 18px 0 0;width:100%;max-height:90dvh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;padding:14px 18px 10px;flex-shrink:0">
+      <div style="flex:1;font-size:16px;color:var(--ink)">♻ 再生成同人文</div>
+      <button id="regen-modal-close" style="background:none;border:none;font-size:22px;color:var(--ink3);cursor:pointer">×</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0 16px 24px;display:flex;flex-direction:column;gap:12px">
+
+      <!-- 词库注入预览（总是开启） -->
+      <div style="background:var(--surface2);border:1px solid var(--acc2);border-radius:10px;padding:12px 14px">
+        <div style="font-size:13px;color:var(--acc3);margin-bottom:6px">✦ 将带入的生词</div>
+        <div id="regen-modal-words" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
+        <div id="regen-modal-word-info" style="font-size:11px;color:var(--ink3)"></div>
+      </div>
+
+      <!-- 内容标签 -->
+      <div class="tag-section">
+        <div class="tag-section-title">内容標籤</div>
+        <div class="tag-row" id="rm-content-tags"></div>
+        <div class="tag-input-row">
+          <input class="tag-input" id="rm-new-content-tag" placeholder="添加自定义内容标签…">
+          <button class="tag-add-btn" id="rm-add-content-tag">+</button>
+        </div>
+      </div>
+
+      <!-- 风格标签 -->
+      <div class="tag-section">
+        <div class="tag-section-title">風格標籤</div>
+        <div class="tag-row" id="rm-style-tags"></div>
+        <div class="tag-input-row">
+          <input class="tag-input" id="rm-new-style-tag" placeholder="添加自定义风格标签…">
+          <button class="tag-add-btn" id="rm-add-style-tag">+</button>
+        </div>
+      </div>
+
+      <!-- 学习重点 -->
+      <div class="tag-section">
+        <div class="tag-section-title">學習重點</div>
+        <div class="tag-row" id="rm-learn-tags"></div>
+        <div class="tag-input-row">
+          <input class="tag-input" id="rm-new-learn-tag" placeholder="添加自定义学习重点…">
+          <button class="tag-add-btn" id="rm-add-learn-tag">+</button>
+        </div>
+      </div>
+
+      <!-- 特殊指令 -->
+      <div class="tag-section">
+        <div class="tag-section-title">特殊指令</div>
+        <textarea id="rm-special-inst" rows="2" style="border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--ink);outline:none;width:100%;resize:vertical;min-height:50px;line-height:1.6" placeholder="例：NSFW，不要自我审查…"></textarea>
+      </div>
+
+      <button class="search-btn" id="regen-modal-gen">✦ 生成梗概</button>
+    </div>
+  </div>
+</div>
+
+<!-- 错误弹窗 -->
+<div id="err-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border:1px solid var(--bdr);border-radius:14px;padding:20px;max-width:360px;width:100%;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">⚠️</span>
+      <div style="flex:1;font-size:14px;font-weight:500;color:var(--ink)">生成失败</div>
+      <button id="err-close" style="background:none;border:none;font-size:20px;color:var(--ink3);cursor:pointer;padding:2px">×</button>
+    </div>
+    <div id="err-msg" style="font-size:13px;color:var(--ink2);line-height:1.7;word-break:break-all;background:var(--surface2);border-radius:8px;padding:10px 12px;max-height:200px;overflow-y:auto"></div>
+    <button id="err-copy" style="background:var(--acc2);border:none;border-radius:8px;padding:10px;font-size:13px;font-family:inherit;color:var(--ink);cursor:pointer">复制错误信息</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════
+// STATE
+// ════════════════════════════════════
+const SK='yuya_v1';
+
+// 内容タグ：グループ構造
+const TAG_GROUPS_CONTENT=[
+  {label:'日常・場面', tags:['日常','コンビニ','喫茶店','雨の日','深夜','料理','銭湯','公園','駅のホーム','通勤']},
+  {label:'季節・天気', tags:['冬','夏','梅雨','花見','初雪','台風の夜']},
+  {label:'仕事・社会', tags:['出張','残業','締め切り前夜','社内恋愛','転職','仕事帰り']},
+  {label:'関係性イベント', tags:['喧嘩と仲直り','すれ違い','再会','告白','初デート','初キス','プロポーズ','別れ','復縁']},
+  {label:'特殊状況', tags:['同居','終電逃し','停電','閉じ込められる','看病','秘密がばれる','嘘がばれる']},
+  {label:'関係性・感情', tags:['片思い','両思い','幼馴染','年の差','ライバル','元カレ元カノ','友人以上恋人未満','嫉妬','独占欲','依存','焦れったい','距離感','言えない気持ち','後悔']},
+  {label:'世界観パロ', tags:['現パロ','学パロ','ファンタジーパロ','転生パロ','大正パロ','江戸パロ','SF設定','和風ファンタジー','近未来']},
+  {label:'職業パロ', tags:['探偵パロ','刑事パロ','スパイパロ','マフィアパロ','医者パロ','カフェパロ','花屋パロ','書店パロ','アイドルパロ','作家パロ','弁護士パロ']},
+  {label:'関係性パロ', tags:['お見合いパロ','新婚パロ','主従パロ','幼馴染パロ','隣人パロ','義兄妹パロ']},
+  {label:'特殊設定', tags:['オメガバース','番い','運命の相手','魔法使い','異能力','記憶喪失','タイムリープ','死に戻り','夢の中','鏡写し','入れ替わり']},
+];
+const DEFAULT_CONTENT_TAGS=TAG_GROUPS_CONTENT.flatMap(g=>g.tags);
+
+// 風格タグ：グループ構造
+const TAG_GROUPS_STYLE=[
+  {label:'感情トーン', tags:['もどかしい','甘々','切ない','胸が痛い','ほっこり','苦しい','ドキドキ','温かい','重い','ビター']},
+  {label:'展開・構成', tags:['スローバーン','ハッピーエンド','バッドエンド','急展開','伏線あり','どんでん返し','余韻','ループ']},
+  {label:'視点・形式', tags:['一人称','三人称','視点変え','手紙形式','回想録','独り言','日記形式','短編']},
+  {label:'文体', tags:['心理描写多め','会話中心','詩的','散文的','情緒的','淡々と','言葉少な']},
+  {label:'pixiv定番感情タグ', tags:['砂糖吐く','胸キュン','尊い','両片思い','恋愛下手','不器用','こじらせ','ほのぼの','甘い']},
+];
+const DEFAULT_STYLE_TAGS=TAG_GROUPS_STYLE.flatMap(g=>g.tags);
+
+const DEFAULT_LEARN_TAGS=['外来語多め','ビジネス語','敬語・丁寧語','複合動詞','N2語彙','N1語彙','大阪弁','若者言葉','感情語彙','身体表現','慣用句','擬音語・擬態語','季語'];
+
+let A={
+  theme:'dark',
+  presets:[],activeP:null,model:'',
+  cfg:{charName:'',charCard:'',jpLevel:'natural',chCount:'3',specialInst:'',sysPrompt:''},
+  characters:[],  // [{id,name,card}]
+  activeChars:[],  // 生成时选中的角色id列表
+  contentTags:[...DEFAULT_CONTENT_TAGS],
+  styleTags:[...DEFAULT_STYLE_TAGS],
+  selContentTags:[],
+  selStyleTags:[],
+  learnTags:[],
+  selLearnTags:[],
+  searchResults:[],   // [{title,titleJp,tags,summary,warnTags}]
+  selectedResult:null,
+  searchHistory:[],   // [{id,contentTags,styleTags,learnTags,results:[],createdAt}]
+  curHistoryId:null,  // 当前在看的搜索历史ID
+  books:[],           // [{id,title,titleJp,tags,summary,chapters:[{title,content,vocabList,comments,an}],savedAt,favAt}]
+  vocab:[],           // [{id,word,ruby,cn,examples:[{src,sentence}],status:'active'|'done',addedAt}]
+  curBook:null,
+  curChapter:0,
+  selTxt:'',selEl:null,
+  chatHist:[],
+  chatCache:{},  // bookId -> [{role,content}]
+  pendingMsgs:[],
+};
+
+function sv(){localStorage.setItem(SK,JSON.stringify(A));}
+function ld(){
+  const r=localStorage.getItem(SK);
+  if(!r)return;
+  try{
+    const d=JSON.parse(r);
+    ['theme','presets','activeP','model','cfg','books','vocab','searchHistory','chatCache','characters','activeChars'].forEach(k=>{if(d[k]!==undefined)A[k]=d[k];});
+    // 标签：从存档里取用户自定义标签（不在DEFAULT里的），和DEFAULT合并
+    const mergeCustomTags=(saved, defaults)=>{
+      const custom=(saved||[]).filter(t=>!defaults.includes(t));
+      return [...defaults, ...custom];
+    };
+    A.contentTags=mergeCustomTags(d.contentTags, DEFAULT_CONTENT_TAGS);
+    A.styleTags=mergeCustomTags(d.styleTags, DEFAULT_STYLE_TAGS);
+    A.learnTags=mergeCustomTags(d.learnTags, DEFAULT_LEARN_TAGS);
+    // 恢复选中状态
+    if(d.selContentTags)A.selContentTags=d.selContentTags;
+    if(d.selStyleTags)A.selStyleTags=d.selStyleTags;
+    if(d.selLearnTags)A.selLearnTags=d.selLearnTags;
+    // 迁移旧词库数据：加SRS字段
+    try{
+      A.vocab=A.vocab.map(v=>({
+        srsLevel:0,nextReview:null,lastReview:null,
+        reviewCount:0,streak:0,
+        seenInBooks:[],generatedCount:0,lastGenerated:null,
+        ...v,
+        status:v.status==='done'?'mastered':v.status==='active'?'new':v.status||'new',
+      }));
+    }catch(e){console.warn('vocab migrate error',e);}
+  }catch(e){}
+}
+
+// ════════════════════════════════════
+// API
+// ════════════════════════════════════
+function getPreset(){return A.presets.find(p=>p.id===A.activeP);}
+function getModel(){return A.model||document.getElementById('m-manual').value.trim();}
+
+async function callAPI(messages,maxTokens=1500,stream=false){
+  const p=getPreset();
+  if(!p)throw new Error('请先配置API预设');
+  const model=getModel();
+  if(!model)throw new Error('请先选择模型');
+
+  const res=await fetch(p.url.replace(/\/$/,'')+'/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${p.key}`},
+    body:JSON.stringify({model,messages,max_tokens:maxTokens,stream}),
+  });
+  if(!res.ok){
+    const err=await res.json().catch(()=>({}));
+    throw new Error(err.error?.message||`HTTP ${res.status}`);
+  }
+  if(!stream){
+    const data=await res.json();
+    return data.choices[0].message.content;
+  }
+  return res; // stream: return raw response
+}
+
+// 流式请求并收集完整文本（解决长请求丢包问题）
+async function callAPIStream(messages,maxTokens=2000,temperature=1){
+  const p=getPreset();
+  if(!p)throw new Error('请先配置API预设');
+  const model=getModel();
+  if(!model)throw new Error('请先选择模型');
+
+  const res=await fetch(p.url.replace(/\/$/,'')+'/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${p.key}`},
+    body:JSON.stringify({model,messages,max_tokens:maxTokens,temperature,stream:true}),
+  });
+  if(!res.ok){
+    const err=await res.json().catch(()=>({}));
+    throw new Error(err.error?.message||`HTTP ${res.status}`);
+  }
+
+  const reader=res.body.getReader();
+  const decoder=new TextDecoder();
+  let buf='',full='';
+  while(true){
+    const{done,value}=await reader.read();
+    if(done)break;
+    buf+=decoder.decode(value,{stream:true});
+    const lines=buf.split('\n');
+    buf=lines.pop();
+    for(const line of lines){
+      if(!line.startsWith('data:'))continue;
+      const data=line.slice(5).trim();
+      if(data==='[DONE]')break;
+      try{
+        const j=JSON.parse(data);
+        full+=j.choices?.[0]?.delta?.content||'';
+      }catch{}
+    }
+  }
+  return full;
+}
+
+async function streamToElement(res,el,onDone){
+  const reader=res.body.getReader();
+  const decoder=new TextDecoder();
+  let buf='',full='';
+  el.textContent='';
+  while(true){
+    const{done,value}=await reader.read();
+    if(done)break;
+    buf+=decoder.decode(value,{stream:true});
+    const lines=buf.split('\n');
+    buf=lines.pop();
+    for(const line of lines){
+      if(!line.startsWith('data:'))continue;
+      const data=line.slice(5).trim();
+      if(data==='[DONE]')break;
+      try{
+        const j=JSON.parse(data);
+        const delta=j.choices?.[0]?.delta?.content||'';
+        full+=delta;el.textContent=full;
+        el.closest('.body')?.scrollTo({top:99999});
+      }catch{}
+    }
+  }
+  if(onDone)onDone(full);
+  return full;
+}
+
+// ════════════════════════════════════
+// TAG UI
+// ════════════════════════════════════
+function renderTags(){
+  // 同时渲染探索页和再生成弹窗的标签
+  renderTagList('content-tags', A.contentTags, A.selContentTags, 'content');
+  renderTagList('style-tags', A.styleTags, A.selStyleTags, 'style');
+  renderTagList('learn-tags', A.learnTags, A.selLearnTags, 'learn');
+  renderTagList('rm-content-tags', A.contentTags, A.selContentTags, 'content');
+  renderTagList('rm-style-tags', A.styleTags, A.selStyleTags, 'style');
+  renderTagList('rm-learn-tags', A.learnTags, A.selLearnTags, 'learn');
+}
+
+const DEFAULT_CONTENT = [...DEFAULT_CONTENT_TAGS];
+const DEFAULT_STYLE = [...DEFAULT_STYLE_TAGS];
+const DEFAULT_LEARN = [...DEFAULT_LEARN_TAGS];
+
+function renderTagList(elId, tags, sel, type){
+  const el=document.getElementById(elId);
+  if(!el)return;
+  el.innerHTML='';
+
+  // 判断是否有分组结构
+  const groupMap={'content':TAG_GROUPS_CONTENT,'style':TAG_GROUPS_STYLE};
+  const groups=groupMap[type];
+  // 获取用户自定义标签（不在任何group里的）
+  const allGroupTags=groups?groups.flatMap(g=>g.tags):tags;
+  const customTags=tags.filter(t=>!allGroupTags.includes(t));
+
+  if(groups){
+    // 分组渲染：每组一个小标题
+    const expanded=el.dataset.expanded==='1';
+    const SHOW_GROUPS=3; // 折叠时显示的组数
+    const visibleGroups=expanded?groups:groups.slice(0,SHOW_GROUPS);
+    const hasMore=groups.length>SHOW_GROUPS&&!expanded;
+
+    visibleGroups.forEach(group=>{
+      // 组标题
+      const label=document.createElement('div');
+      label.style.cssText='font-size:10px;color:var(--ink3);letter-spacing:.08em;margin:8px 0 4px;opacity:.7;flex-basis:100%';
+      label.textContent='▸ '+group.label;
+      el.appendChild(label);
+      // 组内标签
+      group.tags.forEach(t=>renderSingleTag(el,t,sel,type));
+    });
+    // 自定义标签放最后
+    customTags.forEach(t=>renderSingleTag(el,t,sel,type,true));
+    // 展开/收起按钮
+    if(hasMore){
+      const btn=document.createElement('div');
+      btn.className='tag';
+      btn.style.cssText='color:var(--ink3);border-style:dashed;opacity:.8;font-size:11px;margin-top:4px';
+      btn.textContent=`+${groups.length-SHOW_GROUPS}グループ もっと見る`;
+      btn.addEventListener('click',()=>{el.dataset.expanded='1';renderTags();});
+      el.appendChild(btn);
+    } else if(expanded&&groups.length>SHOW_GROUPS){
+      const btn=document.createElement('div');
+      btn.className='tag';
+      btn.style.cssText='color:var(--ink3);border-style:dashed;opacity:.8;font-size:11px;margin-top:4px';
+      btn.textContent='折りたたむ ↑';
+      btn.addEventListener('click',()=>{el.dataset.expanded='0';renderTags();});
+      el.appendChild(btn);
+    }
+  } else {
+    // 无分组：原来的折叠逻辑
+    const expanded=el.dataset.expanded==='1';
+    const SHOW=8;
+    const visible=expanded?tags:tags.filter((t,idx)=>sel.includes(t)||idx<SHOW);
+    visible.forEach(t=>renderSingleTag(el,t,sel,type));
+    const hasMore=tags.length>SHOW&&!expanded;
+    if(hasMore){
+      const btn=document.createElement('div');
+      btn.className='tag';
+      btn.style.cssText='color:var(--ink3);border-style:dashed;opacity:.8;font-size:11px';
+      btn.textContent=`+${tags.length-SHOW} もっと見る`;
+      btn.addEventListener('click',()=>{el.dataset.expanded='1';renderTags();});
+      el.appendChild(btn);
+    } else if(expanded&&tags.length>SHOW){
+      const btn=document.createElement('div');
+      btn.className='tag';
+      btn.style.cssText='color:var(--ink3);border-style:dashed;opacity:.8;font-size:11px';
+      btn.textContent='折りたたむ ↑';
+      btn.addEventListener('click',()=>{el.dataset.expanded='0';renderTags();});
+      el.appendChild(btn);
+    }
+  }
+}
+
+function renderSingleTag(el,t,sel,type,isCustom=false){
+  const defaults=['content','style','learn'].includes(type)?
+    (type==='content'?DEFAULT_CONTENT_TAGS:type==='style'?DEFAULT_STYLE_TAGS:DEFAULT_LEARN_TAGS):[];
+  const custom=isCustom||!defaults.includes(t);
+  const div=document.createElement('div');
+  div.className='tag'+(sel.includes(t)?' on':'');
+  div.innerHTML=escH(t)+(custom?` <span style='margin-left:3px;opacity:.6;font-size:11px' data-del='${escH(t)}' data-type='${type}'>×</span>`:'');
+  div.addEventListener('click',(e)=>{
+    if(e.target.dataset.del){
+      const tag=e.target.dataset.del,tt=e.target.dataset.type;
+      const arr=tt==='content'?A.contentTags:tt==='style'?A.styleTags:A.learnTags;
+      const sarr=tt==='content'?A.selContentTags:tt==='style'?A.selStyleTags:A.selLearnTags;
+      const ai=arr.indexOf(tag);if(ai>=0)arr.splice(ai,1);
+      const si=sarr.indexOf(tag);if(si>=0)sarr.splice(si,1);
+      sv();renderTags();return;
+    }
+    const ix=sel.indexOf(t);
+    if(ix>=0)sel.splice(ix,1);else sel.push(t);
+    renderTags();
+  });
+  el.appendChild(div);
+}
+
+// ════════════════════════════════════
+// GENERATE OUTLINES
+// ════════════════════════════════════
+function getTagKey(){
+  const ct=[...A.selContentTags].sort().join(',');
+  const st=[...A.selStyleTags].sort().join(',');
+  const lt=[...A.selLearnTags].sort().join(',');
+  return `${ct}|${st}|${lt}`;
+}
+
+// 获取要带入的生词：跨书随机选，避免同源词扎堆
+function getVocabToInject(max=8){
+  if(!A.vocab.length) return [];
+  const candidates=[...A.vocab].filter(v=>v.status!=='mastered');
+  if(!candidates.length) return [];
+
+  // 按来源书分组
+  const byBook={};
+  const noBook=[];
+  candidates.forEach(v=>{
+    const src=v.examples?.[0]?.bookId||'none';
+    if(src==='none'){noBook.push(v);}
+    else{if(!byBook[src])byBook[src]=[];byBook[src].push(v);}
+  });
+
+  // 给每个词计算权重：generatedCount少 + 距上次生成久 = 优先
+  const score=v=>{
+    const genPenalty=(v.generatedCount||0)*3;
+    const daysSince=v.lastGenerated?Math.floor((Date.now()-v.lastGenerated)/(86400000)):999;
+    const freshBonus=Math.min(daysSince,30);
+    const srsBonus=v.srsLevel||0;
+    return freshBonus-genPenalty+srsBonus+(Math.random()*2); // 加一点随机性
+  };
+
+  // 词库小（<=max）时：全部取出，不限制来源
+  if(candidates.length<=max){
+    const all=[...candidates].sort((a,b)=>score(b)-score(a));
+    for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]];}
+    return all;
+  }
+
+  // 词库大时：跨书分散选，避免同场景词扎堆
+  const selected=[];
+  const bookIds=Object.keys(byBook);
+  const perBook=Math.max(1,Math.ceil(max/Math.max(bookIds.length,1)));
+
+  bookIds.forEach(bookId=>{
+    const sorted=[...byBook[bookId]].sort((a,b)=>score(b)-score(a));
+    sorted.slice(0,perBook).forEach(v=>{if(selected.length<max)selected.push(v);});
+  });
+  // noBook词补进去
+  noBook.sort((a,b)=>score(b)-score(a));
+  noBook.forEach(v=>{if(selected.length<max&&!selected.includes(v))selected.push(v);});
+  // 补满
+  if(selected.length<max){
+    candidates.filter(v=>!selected.includes(v)).sort((a,b)=>score(b)-score(a))
+      .forEach(v=>{if(selected.length<max)selected.push(v);});
+  }
+
+  // 最后随机shuffle
+  for(let i=selected.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [selected[i],selected[j]]=[selected[j],selected[i]];
+  }
+  return selected.slice(0,max);
+}
+
+function updateVocabInjectPreview(){
+  const toggle=document.getElementById('vocab-inject-toggle');
+  const preview=document.getElementById('vocab-inject-preview');
+  const countEl=document.getElementById('vocab-inject-count');
+  if(!toggle||!toggle.checked){
+    preview.style.display='none';
+    countEl.style.display='none';
+    return;
+  }
+  const words=getVocabToInject(8);
+  if(!words.length){
+    countEl.textContent='词库为空，先去读文章存词吧';
+    countEl.style.display='block';
+    preview.style.display='none';
+    return;
+  }
+  preview.innerHTML=words.map(v=>`<span style="background:var(--surface2);border:1px solid var(--bdr2);border-radius:12px;padding:3px 10px;font-size:12px;color:var(--ink2);font-family:'Noto Serif JP',serif">${v.word}</span>`).join('');
+  preview.style.display='flex';
+  const neverGenerated=words.filter(v=>!v.generatedCount).length;
+  countEl.textContent=`共${words.length}个词，其中${neverGenerated}个从未出现在新文里`;
+  countEl.style.display='block';
+}
+
+function getJpLevelPrompt(){
+  const m={
+    'natural':'使用真实日语媒体中的自然用词，多用外来语片假名、复合动词、口语缩略形、生活场景专有名词，避开教材风格和考试用词',
+    'literary':'以书面语为主，汉字词丰富，文体典雅，适合文学叙事风格',
+    'casual':'日常口语为主，缩略多，年轻人用词，如だよね、じゃん、っぽい等',
+  };
+  return m[A.cfg.jpLevel]||m['natural'];
+}
+
+async function generateOutlines(forceNew=false){
+  const btn=document.getElementById('search-btn');
+  document.getElementById('gen-full-btn').style.display='none';
+  A.selectedResult=null;
+
+  const tagKey=getTagKey();
+  const existIdx=A.searchHistory.findIndex(h=>h.tagKey===tagKey);
+
+  // 相同标签且不强制重新生成：直接显示历史
+  if(existIdx>=0&&!forceNew){
+    A.curHistoryId=A.searchHistory[existIdx].id;
+    A.searchResults=A.searchHistory[existIdx].results;
+    renderOutlines();
+    showResultsSection(A.searchHistory[existIdx]);
+    toast('已加载历史记录');
+    renderHistoryList();
+    return;
+  }
+
+  btn.disabled=true;btn.textContent='生成中…';
+  document.getElementById('results-section').style.display='none';
+
+  const charName=A.cfg.charName||'角色';
+  const contentSel=A.selContentTags.length?A.selContentTags.join('、'):'日常生活';
+  const styleSel=A.selStyleTags.length?A.selStyleTags.join('、'):'';
+  const learnSel=A.selLearnTags.length?A.selLearnTags.join('、'):'';
+  const special=A.cfg.specialInst||'';
+  // 带入生词
+  const injectToggle=document.getElementById('vocab-inject-toggle');
+  const injectWords=injectToggle?.checked?getVocabToInject(8):[];
+  const injectPromptPart=injectWords.length?
+    `
+请在文章里自然地用到以下词汇（每个词至少用一次，融入情节，不要刻意堆砌）：
+${injectWords.map(v=>`${v.word}（${v.cn}）`).join('、')}`:'';
+  const jpLevelPrompt=getJpLevelPrompt();
+
+  // 已有历史时加"不要生成与以下相同的作品"
+  const existTitles=existIdx>=0?A.searchHistory[existIdx].results.map(r=>r.title).join('、'):'';
+
+  // 组合角色卡：使用activeChars里选中的角色
+  const activeCharCards=A.characters.filter(c=>A.activeChars.includes(c.id));
+  const charCardsText=activeCharCards.length
+    ? activeCharCards.map(c=>`[角色: ${c.name}]\n${c.card}`).join('\n\n')
+    : (charCard||'角色设定未填写');
+  // 用户系统prompt（有自定义就用，没有就用默认）
+  const customSys=A.cfg.sysPrompt||DEFAULT_SYS_PROMPT;
+  const sysPrompt=customSys+`
+
+【角色档案】
+${charCardsText}
+${special?`\n【特殊要求】${special}`:''}
+
+每篇格式，用===WORK===和===END===包裹：
+===WORK===
+TITLE:
+SUMMARY:（直接在这行写，200-300字，像AO3简介）
+TAGS:
+RATING:G或T或M或E
+WARN:
+STATS:hits数字/kudos数字/bookmarks数字/chapters数字/ending(HE或BE或OE)
+===END===`;
+
+  const activeNames=activeCharCards.map(c=>c.name).join(' ');
+  const userMsg=`Keywords: ${contentSel}${styleSel?' '+styleSel:''} ${activeNames||charName}${injectWords.length?' 融入词汇:'+injectWords.map(v=>v.word).join(' '):''}${existTitles?' 不重复:'+existTitles:''}`;
+
+  try{
+    const text=await callAPIStream([
+      {role:'system',content:sysPrompt},
+      {role:'user',content:userMsg}
+    ],6000,0.8);
+    // 解析分隔符格式
+    const newResults=parseOutlines(text);
+    if(!newResults.length){
+      errorToast('梗概生成格式错误，请重试\n\n原始返回：\n'+text.substring(0,400));
+      throw new Error('format error');
+    }
+
+    if(existIdx>=0){
+      // 追加到现有历史（下一页）
+      A.searchHistory[existIdx].results.push(...newResults);
+      A.searchHistory[existIdx].page=(A.searchHistory[existIdx].page||1)+1;
+      if(injectWords.length)A.searchHistory[existIdx].injectWords=injectWords.map(v=>({word:v.word,cn:v.cn,id:v.id}));
+      A.curHistoryId=A.searchHistory[existIdx].id;
+      A.searchResults=A.searchHistory[existIdx].results;
+    } else {
+      // 新建历史
+      const tagLabels=[...A.selContentTags,...A.selStyleTags,...A.selLearnTags].join(' · ')||'全部';
+      const isRegen=injectWords.length>0;
+      const regenWordLabel=isRegen?(' · '+injectWords.map(v=>v.word).join(' ')):'';
+      const hist={
+        id:'h'+Date.now(),tagKey,
+        label:(isRegen?'♻ ':'')+tagLabels+regenWordLabel,
+        results:newResults,
+        page:1,
+        createdAt:Date.now(),
+        injectWords:isRegen?injectWords.map(v=>({word:v.word,cn:v.cn,id:v.id})):[],
+      };
+      A.searchHistory.unshift(hist);
+      if(A.searchHistory.length>20)A.searchHistory=A.searchHistory.slice(0,20);
+      A.curHistoryId=hist.id;
+      A.searchResults=newResults;
+    }
+
+    // 更新injectWords的generatedCount
+    if(injectWords.length){
+      const now2=Date.now();
+      injectWords.forEach(v=>{
+        const vocab=A.vocab.find(x=>x.id===v.id);
+        if(vocab){vocab.generatedCount=(vocab.generatedCount||0)+1;vocab.lastGenerated=now2;}
+      });
+    }
+    sv();
+    renderOutlines();
+    const hist=A.searchHistory.find(h=>h.id===A.curHistoryId);
+    showResultsSection(hist);
+    renderHistoryList();
+    updateVocabBanner();
+    const _ip=document.getElementById('outline-inject-preview');
+    if(_ip)_ip.style.display='none';
+    const ip=document.getElementById('outline-inject-preview');
+    if(ip)ip.style.display='none';
+  }catch(e){
+    errorToast('生成失败：'+e.message);
+  }
+  btn.disabled=false;btn.textContent='✦ 生成梗概';
+}
+
+function showResultsSection(hist){
+  const sec=document.getElementById('results-section');
+  sec.style.display='flex';
+  document.getElementById('results-label').textContent=`第${hist?.page||1}页 · ${hist?.results?.length||0}篇梗概`;
+  // 显示本次使用的injectWords
+  const injectPreview=document.getElementById('outline-inject-preview');
+  if(injectPreview){
+    const words=hist?.injectWords||[];
+    if(words.length){
+      injectPreview.innerHTML='<span style="font-size:11px;color:var(--ink3)">本次带入：</span>'+
+        words.map(v=>`<span style="background:var(--surface3);border:1px solid var(--acc2);border-radius:10px;padding:2px 8px;font-size:11px;color:var(--acc2)">${escH(v.word)}</span>`).join('');
+      injectPreview.style.display='flex';
+    } else {
+      injectPreview.style.display='none';
+    }
+  }
+}
+
+function renderHistoryList(){
+  const sec=document.getElementById('history-section');
+  const list=document.getElementById('history-list');
+  if(!A.searchHistory.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  list.innerHTML='';
+  A.searchHistory.forEach(h=>{
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--bdr);border-radius:8px;padding:9px 12px;cursor:pointer;transition:border-color .15s';
+    if(h.id===A.curHistoryId)div.style.borderColor='var(--acc2)';
+    div.innerHTML=`
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(h.label)}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">第${h.page||1}页 · ${h.results?.length||0}篇 · ${new Date(h.createdAt).toLocaleDateString('zh-CN')}</div>
+      </div>
+      <button style="background:none;border:none;font-size:16px;color:var(--ink3);cursor:pointer;padding:2px 4px" data-hid="${h.id}">🗑</button>
+    `;
+    div.addEventListener('click',e=>{
+      if(e.target.dataset.hid){
+        A.searchHistory=A.searchHistory.filter(x=>x.id!==e.target.dataset.hid);
+        if(A.curHistoryId===e.target.dataset.hid){A.curHistoryId=null;A.searchResults=[];document.getElementById('results-section').style.display='none';document.getElementById('gen-full-btn').style.display='none';}
+        sv();renderHistoryList();
+        return;
+      }
+      // 加载这条历史
+      A.curHistoryId=h.id;
+      A.searchResults=h.results;
+      renderOutlines();
+      showResultsSection(h);
+    });
+    list.appendChild(div);
+  });
+}
+
+function renderOutlines(){
+  const el=document.getElementById('search-results');
+  el.innerHTML='';
+  A.searchResults.forEach((w,i)=>{
+    const card=document.createElement('div');
+    card.className='ao3-card';
+    const ratingColor={G:'var(--green)',T:'var(--acc)',M:'#e8a030',E:'var(--red)'}[w.rating]||'var(--ink3)';
+    // title用日语标题
+    const displayTitle=w.title||w.titleJp||'無題';
+    const s=w.stats||{};
+    const endingLabel={HE:'HE ♥',BE:'BE ✦',OE:'OE →'}[s.ending]||'';
+    const statsHtml=s.hits?`<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--ink3);margin-top:7px;padding-top:7px;border-top:1px solid var(--bdr)">
+      <span>♦ ${s.hits.toLocaleString()} hits</span>
+      ${s.kudos?`<span>♥ ${s.kudos.toLocaleString()}</span>`:''}
+      ${s.bookmarks?`<span>🔖 ${s.bookmarks}</span>`:''}
+      ${s.totalChapters?`<span>共${s.totalChapters}章</span>`:''}
+      ${endingLabel?`<span style="color:var(--acc2)">${endingLabel}</span>`:''}
+    </div>`:'';
+    card.innerHTML=`
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+        <div class="c-badge" style="background:${ratingColor};flex-shrink:0">${w.rating||'?'}</div>
+        <div class="c-title" style="flex:1">${escH(displayTitle)}</div>
+      </div>
+      <div class="c-tags">
+        ${(w.warnTags||[]).map(t=>`<span class="c-tag warn">⚠ ${escH(t)}</span>`).join('')}
+        ${(w.tags||[]).map(t=>`<span class="c-tag">${escH(t)}</span>`).join('')}
+      </div>
+      <div class="c-summary" style="margin-top:8px">${escH(w.summary||'')}</div>
+      ${statsHtml}
+    `;
+    card.addEventListener('click',()=>{
+      document.querySelectorAll('.ao3-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      A.selectedResult=w;
+      document.getElementById('gen-full-btn').style.display='block';
+      updateVocabInjectPreview();
+    });
+    el.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════
+// GENERATE FULL FIC (STREAMING)
+// ════════════════════════════════════
+async function generateFull(){
+  if(!A.selectedResult){toast('请先选择一篇梗概');return;}
+  const w=A.selectedResult;
+  const btn=document.getElementById('gen-full-btn');
+  btn.disabled=true;btn.textContent='生成中…';
+
+  const charName=A.cfg.charName||'角色';
+  const chCount=parseInt(A.cfg.chCount)||3;
+  const special=A.cfg.specialInst||'';
+  // 多角色卡：把选中角色都拼进来
+  const activeCharCards=A.characters.filter(c=>A.activeChars.includes(c.id));
+  const charCard=activeCharCards.length
+    ? activeCharCards.map(c=>`[角色: ${c.name}]\n${c.card}`).join('\n\n')
+    : (A.cfg.charCard||'');
+  // 带入生词
+  const injectToggle=document.getElementById('vocab-inject-toggle');
+  const injectWords=injectToggle?.checked?getVocabToInject(8):[];
+  const injectPromptPart=injectWords.length?
+    `
+请在文章里自然地用到以下词汇（每个词至少用一次，融入情节，不要刻意堆砌）：
+${injectWords.map(v=>`${v.word}（${v.cn}）`).join('、')}`:'';
+
+  const prompt=`${A.cfg.sysPrompt||DEFAULT_SYS_PROMPT}
+
+你是AO3风格的日语同人小说作家，擅长细腻情感叙事和感官描写。
+
+角色设定：
+${charCard||`${charName}，中日双语出版社编辑，沉稳克制，说话简短精准。`}
+
+请根据以下作品信息，用日语写一篇完整同人小说，共${chCount}章。
+
+【作品信息】
+标题：${w.title}
+标签：${(w.tags||[]).join('、')}
+简介：${w.summary}
+${special?`特殊要求：${special}`:''}
+
+【最重要的规则：简介是章节大纲】
+简介里的每一个场景节点、每一句关键对话、每一个情感转折，都必须在正文里展开成完整场景。
+简介是骨架，正文是血肉——不是重新写一个故事，是把简介里已经发生的事情完整展开。
+如果简介里写了"她数了三次"，正文里就要有三次，并且每次都写清楚是什么情况。
+如果简介里写了某句对话，那句对话必须在正文里出现，并且有充分的前后文。
+
+【标签规定了结构，必须遵守】
+${(w.tags||[]).map(t=>`- 「${t}」→ 这个标签规定了故事的某个结构/视角/情节，必须在正文里完整体现`).join('\n')}
+特别注意视角标签（POV双视角/POV交替/一人称等）——如果标签规定了视角，每章都必须遵守。
+
+【写作要求】
+1. 全文日语，对话口语自然，禁止翻译腔
+2. 感官细节：触觉（体温/冷暖/材质）、听觉（环境音/呼吸/沉默）、视觉（光线/表情细节/动作）
+3. 行为 > 心理独白："他把句号改成问号又改回句号发出去" > "他在犹豫"
+4. 对话极简但每句有重量，学习参考："嗯"/"从头到尾"/"你知道我在看什么"
+6. 每段日语后用（）附中文翻译
+7. 振假名用 <ruby>漢字<rt>かんじ</rt></ruby> 格式
+8. 每章约${chCount===1?2500:chCount<=3?1500:1200}日语字
+9. 词汇风格：${getJpLevelPrompt()}
+
+输出格式（严格按此格式，不要输出任何其他内容）：
+
+===CHAPTER_1===
+TITLE:第一章的日語タイトル
+CONTENT:
+正文段落1。（中文翻译。）
+正文段落2。（中文翻译。）
+AN:作者有话说（中文，1-2句）
+===END_CHAPTER===
+
+===CHAPTER_2===
+TITLE:第二章タイトル
+CONTENT:
+正文内容
+AN:作者有话说
+===END_CHAPTER===
+
+（以此类推，共${chCount}章）
+
+===VOCAB===
+単語|よみかた|中文释义|例句（原文摘取）
+単語2|よみかた|中文释义|例句
+===END_VOCAB===
+
+===COMMENTS===
+ユーザー名|评论内容（中文，1-2句）
+ユーザー名2|评论内容
+===END_COMMENTS===`;
+
+  // 逐章生成，每章单独请求避免超token限制
+  // 只生成第一章，其余章节用户手动请求
+  const chapters=[];
+  const baseCtx=`角色设定：
+${charCard||`${charName}，中日双语出版社编辑，沉稳克制，说话简短精准。`}
+
+作品：${w.title}
+标签：${(w.tags||[]).join('、')}
+简介：${w.summary}
+${special?`特殊要求：${special}`:''}
+文风：${(A.selStyleTags||[]).join('、')||'克制，留白，有质感'}
+词汇：${getJpLevelPrompt()}
+
+【核心规则】
+1. 简介里的每个节点都要在正文里展开——简介是骨架，正文是血肉
+2. 标签规定的结构（视角/情节/情感）必须跨章节一致贯彻
+3. 对话极简有重量，行为描写>心理独白，感官细节丰富
+4. 大阪地名真实，有生活质感`;
+
+  // 按章数分配注入词
+  const chPerInject=[];
+  if(injectWords.length&&chCount>0){
+    // 把词平均分配到各章，剩余词给第1章
+    const perCh=Math.floor(injectWords.length/chCount)||1;
+    let wordIdx=0;
+    for(let c=0;c<chCount;c++){
+      const slice=injectWords.slice(wordIdx,wordIdx+(c===0?injectWords.length-perCh*(chCount-1):perCh));
+      chPerInject.push(slice);
+      wordIdx+=slice.length;
+    }
+  } else {
+    for(let c=0;c<chCount;c++)chPerInject.push([]);
+  }
+
+  try{
+    // 只生成第1章
+    for(let i=0;i<1;i++){
+      btn.textContent=`生成第${i+1}章…`;
+      const prevChText=chapters.map((c,j)=>'【第'+(j+1)+'章·'+c.title+'】\n'+c.content).join('\n\n');
+      const prevSummary=chapters.length?('前文完整内容：\n'+prevChText+'\n\n续写第'+(i+1)+'章，情节必须和前文自然衔接。'):'';
+
+      const chPrompt=`你是AO3风格的日语同人小说作家，擅长感官细节和情感叙事。
+
+${baseCtx}
+
+${prevSummary}
+
+请写第${i+1}章（共${chCount}章）。每章约${chCount===1?2500:chCount<=3?1500:1200}日语字。
+
+【本章定位】${i===0?'开篇——简介里描写的起点场景在这里展开，建立两个人的关系质感和这篇文的基调':i===chCount-1?'结尾——简介里提到的情感落点在这里实现，情绪要落地，可以开放但要有余韵':'发展——推进情节，简介里承诺的某个转折或张力在这里推进'}
+
+【关键规则：展开简介里的节点】
+简介里的每一句话都是一个章节节点。${i===0?'第一章要展开简介里的起点场景，包括所有提到的具体细节。':'前面章节已经展开了简介的开头，这一章继续展开下一个节点。'}
+- 简介里写了某句关键对话 → 那句对话必须在正文里出现，有充分的前后文
+- 简介里写了某个行为细节 → 那个细节要写成完整的场景
+- 标签里规定的视角 → 必须贯彻到这一章
+
+${chPerInject[i]&&chPerInject[i].length?'【本章必须自然融入以下词汇】'+chPerInject[i].map(v=>v.word+'（'+v.cn+'）').join('、'):''}
+
+格式规则（严格遵守，这是机器解析要求）：
+1. 每段日语正文后，必须在同一段落末尾用（）写中文翻译
+   正确：彼女は振り返った。（她回过头来。）
+   错误：不写翻译，或翻译写成日语
+2. 振假名必须是完整ruby格式：<ruby>漢字<rt>よみ</rt></ruby>
+   错误示例：玉出<rt>たまで</rt>  ← 缺少<ruby>开头
+   正确示例：<ruby>玉出<rt>たまで</rt></ruby>
+3. 只给生僻汉字加振假名，片假名不需要
+4. AN（作者有话说）必须用中文写，可以夹日语词但主要是中文
+5. COMMENTS里的评论内容必须用中文写
+
+输出格式：
+===CHAPTER===
+TITLE:章节日语标题
+CONTENT:
+段落1。（翻译。）
+段落2。（翻译。）
+AN:作者有话说（中文，1句）
+===END===`;
+
+      const text=await callAPIStream([{role:'user',content:chPrompt}],6000,0.8);
+      const titleM=text.match(/TITLE:(.+)/);
+      const contentM=text.match(/CONTENT:\n([\s\S]*?)(?:\nAN:|===END)/);
+
+
+      const anM=text.match(/AN:(.+)/);
+      const c1Title=(titleM?.[1]||`第${i+1}章`).trim();
+      const c1Content=(contentM?.[1]||text).trim();
+      let c1Comments=[];
+      try{
+        const cr=await callAPIStream([{role:'user',content:`为日语同人文第${i+1}章生成2-3条pixiv风格评论（中文，有感情，像真实读者留言，不要套路化）。章节标题：${c1Title}。格式：用户名|评论内容（每行一条）`}],800);
+        c1Comments=cr.trim().split(/\r?\n/).map(l=>{const p=l.indexOf('|');return p>0?{user:l.slice(0,p).trim(),text:l.slice(p+1).trim()}:null;}).filter(Boolean);
+      }catch{}
+      chapters.push({title:c1Title,content:c1Content,an:(anM?.[1]||'').trim(),comments:c1Comments});
+    }
+
+    // 评论已改为每章单独生成
+
+    // 预留空白章节占位（用户手动生成）
+    while(chapters.length<chCount){
+      chapters.push({title:`第${chapters.length+1}章`,content:'',an:'',pending:true});
+    }
+    // 更新inject词的generatedCount
+    const bookId='b'+Date.now();
+    if(injectWords.length){
+      const now=Date.now();
+      injectWords.forEach(v=>{
+        const vocab=A.vocab.find(x=>x.id===v.id);
+        if(vocab){
+          vocab.generatedCount=(vocab.generatedCount||0)+1;
+          vocab.lastGenerated=now;
+          if(!vocab.seenInBooks.includes(bookId))vocab.seenInBooks.push(bookId);
+        }
+      });
+    }
+    const book={
+      id:bookId,
+      title:w.title,titleJp:w.titleJp||'',
+      tags:w.tags||[],warnTags:w.warnTags||[],rating:w.rating||'T',
+      summary:w.summary,words:w.words||'',
+      chapters,vocabList:[],comments:[],  // 评论在每个chapter里
+      chCount,baseCtx,
+      injectWords:injectWords.map(v=>({word:v.word,cn:v.cn})),
+      savedAt:Date.now(),favAt:null,
+    };
+
+    A.books.unshift(book);
+    sv();
+    openBook(book.id);
+    toast('生成完成！');
+  }catch(e){
+    errorToast('生成失败：'+e.message);
+    console.error(e);
+  }
+  btn.disabled=false;btn.textContent='📖 生成完整正文';
+}
+
+// 从段落HTML里提取包含目标词的句子（去掉标签，按句号切）
+function extractSentence(paraEl, word){
+  const p=paraEl.tagName==='P'?paraEl:paraEl.closest('p')||paraEl;
+  if(!p)return '';
+  const clone=p.cloneNode(true);
+  // 先展开ruby：删掉rt/rp，只留汉字主体
+  clone.querySelectorAll('ruby').forEach(ruby=>{
+    ruby.querySelectorAll('rt,rp').forEach(el=>el.remove());
+    ruby.replaceWith(document.createTextNode(ruby.textContent));
+  });
+  // 删中文翻译行和高亮span
+  clone.querySelectorAll('.cn-trans').forEach(el=>el.remove());
+  clone.querySelectorAll('span').forEach(span=>span.replaceWith(document.createTextNode(span.textContent)));
+  const plainText=clone.textContent.trim();
+  if(!plainText)return '';
+  // 按句号切割
+  const sentences=plainText.split(/[。！？]+/).filter(s=>s.trim().length>1);
+  if(word){
+    const match=sentences.find(s=>s.includes(word));
+    if(match)return match.trim().substring(0,150);
+  }
+  const longest=sentences.sort((a,b)=>b.length-a.length)[0]||plainText;
+  return longest.trim().substring(0,150);
+}
+
+// 高亮已存生词（避免破坏ruby标签内部）
+function highlightSavedWords(html, words, injectWordsList=[]){
+  if(!words.length&&!injectWordsList.length) return html;
+  let result=html;
+  const injectSet=new Set(injectWordsList);
+  const allWords=[...new Set([...injectWordsList,...words])];
+  for(const w of allWords){
+    if(!w||w.length<2) continue;
+    const isInject=injectSet.has(w);
+    const cls=isInject?'word-injected':'word-saved';
+    const escaped=w.replace(/[.*+?^${}()|[\\]]/g,'$&');
+    result=result.replace(
+      new RegExp('(?<!<[^>]*)'+escaped+'(?![^<]*>)','g'),
+      `<span class="${cls}" data-word="${w}">${w}</span>`
+    );
+  }
+  return result;
+}
+
+// 简介里高亮再生成注入词
+function highlightInjectInSummary(text, injectWords){
+  if(!injectWords.length) return escH(text);
+  let result=escH(text);
+  injectWords.forEach(v=>{
+    if(!v.word||v.word.length<2) return;
+    const escaped=v.word.replace(/[.*+?^${}()|[\\]]/g,'$&');
+    result=result.replace(new RegExp(escaped,'g'),
+      `<span class="word-injected" data-word="${escH(v.word)}">${escH(v.word)}</span>`);
+  });
+  return result;
+}
+
+// ════════════════════════════════════
+// SRS 间隔复习系统
+// ════════════════════════════════════
+const SRS_INTERVALS=[0,1,3,7,14,30,9999]; // days，level 0-6
+
+function getSRSDue(){
+  // 返回今天到期需要复习的词
+  const now=Date.now();
+  return A.vocab.filter(v=>v.status!=='mastered'&&(v.nextReview===null||v.nextReview<=now));
+}
+
+function getSRSCount(){
+  return getSRSDue().length;
+}
+
+function answerSRS(vocabId, correct){
+  const v=A.vocab.find(x=>x.id===vocabId);
+  if(!v)return;
+  const now=Date.now();
+  v.lastReview=now;
+  v.reviewCount=(v.reviewCount||0)+1;
+
+  if(correct){
+    v.streak=(v.streak||0)+1;
+    v.srsLevel=Math.min((v.srsLevel||0)+1, SRS_INTERVALS.length-1);
+  } else {
+    v.streak=0;
+    v.srsLevel=Math.max(0,(v.srsLevel||0)-1);
+  }
+
+  const days=SRS_INTERVALS[v.srsLevel];
+  if(days>=9999){
+    v.status='mastered';
+    v.nextReview=null;
+  } else {
+    v.status=v.srsLevel>=2?'reviewing':'learning';
+    v.nextReview=now+days*24*60*60*1000;
+  }
+  sv();
+}
+
+// 解析梗概分隔符格式
+function parseOutlines(text){
+  const works=[];
+  const blocks=text.match(/===WORK===([\s\S]*?)===END===/g)||[];
+  for(const block of blocks){
+    const titleM=block.match(/TITLE:(.+)/);
+    const ratingM=block.match(/RATING:(.+)/);
+    const warnM=block.match(/WARN:(.+)/);
+    const summaryM=block.match(/SUMMARY:\s*([\s\S]*?)(?:\n?TAGS:|\n?RATING:|\n?STATS:|\n?===END|$)/);
+    const tagsM=block.match(/TAGS:\s*([\s\S]*?)(?:\n?RATING:|\n?STATS:|\n?===END|$)/);
+    const statsM=block.match(/STATS:(.+)/);
+    const warnTags=(warnM?.[1]||'').trim().split(',').map(t=>t.trim()).filter(Boolean);
+    const tags=(tagsM?.[1]||'').trim().replace(/\n/g,',').split(',').map(t=>t.trim()).filter(Boolean);
+    let stats={};
+    if(statsM){
+      const sp=statsM[1].split('/').map(s=>s.trim());
+      const n=s=>parseInt((s.match(/\d+/)||[])[0])||0;
+      const endRaw=(sp[4]||'').toUpperCase();
+      stats={hits:n(sp[0]),kudos:n(sp[1]),bookmarks:n(sp[2]),totalChapters:n(sp[3]),
+        ending:['HE','BE','OE'].find(e=>endRaw.includes(e))||'OE'};
+    }
+    works.push({
+      title:(titleM?.[1]||'無題').trim(),
+      rating:(ratingM?.[1]||'T').trim(),
+      warnTags,tags,words:'',
+      summary:(summaryM?.[1]||'').trim(),
+      stats,
+    });
+  }
+  return works;
+}
+
+// 解析分隔符格式的文本
+function parseDelimited(text){
+  const chapters=[];
+  const vocabList=[];
+  const comments=[];
+
+  // 解析章节
+  const chapterBlocks=text.match(/===CHAPTER_\d+===([\s\S]*?)===END_CHAPTER===/g)||[];
+  for(const block of chapterBlocks){
+    const titleM=block.match(/TITLE:(.+)/);
+    const contentM=block.match(/CONTENT:\n([\s\S]*?)(?:\nAN:|===END)/);
+    const anM=block.match(/AN:(.+)/);
+    chapters.push({
+      title:(titleM?.[1]||'').trim(),
+      content:(contentM?.[1]||'').trim(),
+      an:(anM?.[1]||'').trim(),
+    });
+  }
+
+  // 解析生词
+  const vocabBlock=text.match(/===VOCAB===([\s\S]*?)===END_VOCAB===/);
+  if(vocabBlock){
+    vocabBlock[1].trim().split(/\r?\n/).forEach(line=>{const parts=line.split('|');
+
+      if(parts.length>=3)vocabList.push({
+        word:parts[0].trim(),ruby:parts[1].trim(),
+        cn:parts[2].trim(),example:parts[3]?.trim()||'',
+      });
+    });
+  }
+
+  // 解析评论
+  const cmtBlock=text.match(/===COMMENTS===([\s\S]*?)===END_COMMENTS===/);
+  if(cmtBlock){
+    cmtBlock[1].trim().split(/\r?\n/).forEach(line=>{const idx=line.indexOf('|');
+
+      if(idx>0)comments.push({user:line.slice(0,idx).trim(),text:line.slice(idx+1).trim()});
+    });
+  }
+
+  return{chapters,vocabList,comments};
+}
+
+// ════════════════════════════════════
+// READER
+// ════════════════════════════════════
+function openBook(id){
+  const book=A.books.find(b=>b.id===id);
+  if(!book)return;
+  A.curBook=id;A.curChapter=0;A.selTxt='';A.selEl=null;A.pendingMsgs=[];
+  // 恢复该书的聊天记录
+  A.chatHist=(A.chatCache&&A.chatCache[id])||[];
+
+  document.getElementById('r-title').textContent=book.title;
+  document.getElementById('btn-fav').textContent=book.favAt?'★':'☆';
+
+  // chapter tabs
+  const tabs=document.getElementById('chapter-tabs');
+  tabs.innerHTML='';
+  (book.chapters||[]).forEach((ch,i)=>{
+    const t=document.createElement('div');
+    const isPending=ch.pending&&!ch.content;
+    t.className='ch-tab'+(i===0?' on':'');
+    t.textContent=isPending?`第${i+1}章 ·`:`第${i+1}章`;
+    t.style.color=isPending?'var(--ink3)':'';
+    t.addEventListener('click',()=>renderChapter(i));
+    tabs.appendChild(t);
+  });
+
+
+
+  showScr('reader');
+  renderChapter(0);
+  updateNextChBtn();
+}
+
+async function rerollChapter(idx){
+  const book=A.books.find(b=>b.id===A.curBook);
+  if(!book||!book.chapters[idx])return;
+  if(book.chapters[idx].pending){toast('这章还没生成过，点下一章按钮生成');return;}
+
+  const rerollBtn=document.getElementById('ch-tab-reroll');
+  if(rerollBtn){rerollBtn.textContent='生成中…';rerollBtn.style.pointerEvents='none';}
+
+  const charName=A.cfg.charName||'角色';
+  const baseCtx=book.baseCtx||`作品：${book.title}`;
+  const chCount=book.chCount||book.chapters.length;
+  const prevChs=book.chapters.slice(0,idx).filter(c=>!c.pending);
+  const prevChText3=prevChs.map((c,j)=>'【第'+(j+1)+'章·'+c.title+'】\n'+c.content).join('\n\n');
+  const prevSummary=prevChs.length?('前文完整内容：\n'+prevChText3+'\n\n重新写第'+(idx+1)+'章，情节必须和前文自然衔接，但内容和之前版本不同。'):'';
+
+
+  const chPrompt=`你是AO3风格的日语同人小说作家，擅长感官细节和情感叙事。
+
+${baseCtx}
+${prevSummary?`前文已写：${prevSummary}。`:''}
+
+请重新写第${idx+1}章（共${chCount}章），和之前版本不同。每章约${chCount===1?2500:chCount<=3?1500:1200}日语字。
+
+格式规则（严格遵守）：
+1. 每段日语末尾用（）写中文翻译：日語文。（中文翻訳。）翻译必须是中文
+2. 振假名用完整ruby格式：<ruby>漢字<rt>よみ</rt></ruby>，只给生僻汉字加
+3. AN用中文写，COMMENTS评论用中文写
+
+===CHAPTER===
+TITLE:章节日语标题
+CONTENT:
+段落1。（中文翻译。）
+AN:作者有话说（1-2句，中文，活人口吻）
+COMMENTS:
+ユーザー名1|评论（中文，活人口气，1-2句）
+ユーザー名2|评论
+===END===`;
+
+  try{
+    const text=await callAPIStream([{role:'user',content:chPrompt}],6000);
+    const titleM=text.match(/TITLE:(.+)/);
+    const contentM=text.match(/CONTENT:\n([\s\S]*?)(?:\nAN:|\nCOMMENTS:|===END)/);
+    const anM=text.match(/AN:(.+)/);
+    const cmtBlock=text.match(/COMMENTS:\n([\s\S]*?)(?:===END|$)/);
+    const newComments=(cmtBlock?.[1]||'').trim().split(/\r?\n/).map(l=>{
+      const p=l.indexOf('|');return p>0?{user:l.slice(0,p).trim(),text:l.slice(p+1).trim()}:null;
+    }).filter(Boolean);
+
+    book.chapters[idx]={
+      title:(titleM?.[1]||`第${idx+1}章`).trim(),
+      content:(contentM?.[1]||text).trim(),
+      an:(anM?.[1]||'').trim(),
+      comments:newComments,
+      pending:false,
+    };
+    sv();
+    renderChapter(idx);
+    toast(`第${idx+1}章重新生成完成`);
+  }catch(e){
+    errorToast('重roll失败：'+e.message);
+  }
+  if(rerollBtn){rerollBtn.textContent='↺';rerollBtn.style.pointerEvents='';}
+}
+
+function updateNextChBtn(){
+  const book=A.books.find(b=>b.id===A.curBook);
+  if(!book)return;
+  const btn=document.getElementById('btn-next-chapter');
+  if(!btn)return;
+  // 找第一个pending的章节
+  const nextPending=book.chapters.findIndex(c=>c.pending);
+  if(nextPending>=0){
+    btn.style.display='flex';
+    btn.querySelector('span').textContent=`第${nextPending+1}章`;
+  } else {
+    btn.style.display='none';
+  }
+}
+
+async function genNextChapter(){
+  const book=A.books.find(b=>b.id===A.curBook);
+  if(!book)return;
+  const idx=book.chapters.findIndex(c=>c.pending);
+  if(idx<0){toast('所有章节已生成');updateNextChBtn();return;}
+
+  const btn=document.getElementById('btn-next-chapter');
+  btn.style.opacity='.4';
+  btn.querySelector('span').textContent='生成中…';
+
+  const baseCtx=book.baseCtx||`作品：${book.title}`;
+  const prevChapters=book.chapters.slice(0,idx).filter(c=>!c.pending);
+  const prevChText2=prevChapters.map((c,j)=>'【第'+(j+1)+'章·'+c.title+'】\n'+c.content).join('\n\n');
+  const prevSummary=prevChapters.length?('前文完整内容：\n'+prevChText2+'\n\n续写第'+(idx+1)+'章，情节必须和前文自然衔接。'):'';
+
+  const chCount=book.chCount||book.chapters.length;
+  const chPrompt=`你是AO3风格的日语同人小说作家，擅长感官细节和情感叙事。
+
+${baseCtx}
+${prevSummary}
+
+请写第${idx+1}章（共${chCount}章）。每章约${chCount===1?2500:chCount<=3?1500:1200}日语字。
+
+【本章定位】${idx===0?'开篇——简介里的起点场景在这里展开':idx===chCount-1?'结尾——简介承诺的情感落点在这里实现，要落地':'发展——展开简介里的下一个节点，标签规定的视角必须贯彻'}
+
+【展开简介】简介里的每个细节、每句关键对话、每个行为，都必须在对应章节里完整展开成场景。
+
+${(()=>{
+  if(!book.injectWords||!book.injectWords.length)return '';
+  const total=book.injectWords.length;
+  const cc=book.chCount||book.chapters.length;
+  const perCh=Math.max(1,Math.floor(total/cc));
+  const start=idx===0?0:Math.min(idx*perCh,total);
+  const end=idx===0?total-perCh*(cc-1):Math.min(start+perCh,total);
+  const slice=book.injectWords.slice(start,end);
+  return slice.length?'【本章必须自然融入以下词汇】'+slice.map(v=>v.word+'（'+v.cn+'）').join('、'):'';
+})()}
+
+格式规则（严格遵守，这是机器解析要求）：
+1. 每段日语正文后，必须在同一段落末尾用（）写中文翻译
+   正确：彼女は振り返った。（她回过头来。）
+   错误：不写翻译，或翻译写成日语
+2. 振假名必须是完整ruby格式：<ruby>漢字<rt>よみ</rt></ruby>
+   错误示例：玉出<rt>たまで</rt>  ← 缺少<ruby>开头
+   正确示例：<ruby>玉出<rt>たまで</rt></ruby>
+3. 只给生僻汉字加振假名，片假名不需要
+4. AN（作者有话说）必须用中文写，可以夹日语词但主要是中文
+5. COMMENTS里的评论内容必须用中文写
+
+输出格式（严格按此，不要多余内容）：
+===CHAPTER===
+TITLE:章节日语标题
+CONTENT:
+段落1。（中文翻译。）
+段落2。（中文翻译。）
+AN:作者有话说（1-2句，中文，像真实同人作者的口吻，可以提到写作心情或剧情提示）
+COMMENTS:
+ユーザー名1|评论内容（中文，活人口气，像真实AO3读者，1-2句，不要太正式）
+ユーザー名2|评论内容
+ユーザー名3|评论内容
+===END===`;
+
+  try{
+    const text=await callAPIStream([{role:'user',content:chPrompt}],6000);
+    const titleM=text.match(/TITLE:(.+)/);
+    const contentM=text.match(/CONTENT:\n([\s\S]*?)(?:\nAN:|\nCOMMENTS:|===END)/);
+    const anM=text.match(/AN:(.+)/);
+    const cmtBlockN=text.match(/COMMENTS:\n([\s\S]*?)(?:===END|$)/);
+
+
+
+    const chTitle=(titleM?.[1]||`第${idx+1}章`).trim();
+    const chContent=(contentM?.[1]||text).trim();
+    const chAn=(anM?.[1]||'').trim();
+
+    // 单独生成本章评论（不占正文token）
+    let chComments=[];
+    try{
+      const cmtRes=await callAPIStream([{role:'user',content:`为以下日语同人文第${idx+1}章生成2-3条pixiv风格的评论。
+
+章节标题：${chTitle}
+章节内容摘要：${chContent.substring(0,1000)}
+
+要求：
+- 像真实的pixiv读者留言，有感情有个性
+- 中文，每条1-2句
+- 可以是感叹、追更、被某句话戳到、CP感想等
+- 不要太套路化
+
+格式：每行一条评论，用|分隔用户名和内容
+例：夜读者|这章太戳了，最后那句话我反复看了三遍`}],300);
+      chComments=cmtRes.trim().split(/\r?\n/).map(line=>{
+
+
+        const idx2=line.indexOf('|');
+        if(idx2>0)return{user:line.slice(0,idx2).trim(),text:line.slice(idx2+1).trim()};
+        return null;
+      }).filter(Boolean);
+    }catch(e){console.warn('评论生成失败',e);}
+
+    book.chapters[idx]={
+      title:chTitle,content:chContent,an:chAn,
+      comments:chComments,
+      pending:false,
+    };
+    sv();
+    // 更新章节tab
+    const tabs=document.getElementById('chapter-tabs');
+    const tabEls=[...tabs.querySelectorAll('.ch-tab')].filter(t=>!t.id);
+    if(tabEls[idx])tabEls[idx].textContent=`第${idx+1}章`;
+    renderChapter(idx);
+    updateNextChBtn();
+    toast(`第${idx+1}章生成完成`);
+  }catch(e){
+    errorToast('生成失败：'+e.message);
+    btn.style.opacity='1';
+    updateNextChBtn();
+  }
+}
+
+function renderChapter(idx){
+  const book=A.books.find(b=>b.id===A.curBook);
+  if(!book)return;
+  A.curChapter=idx;
+
+  document.querySelectorAll('.ch-tab').forEach((t,i)=>t.classList.toggle('on',i===idx));
+
+
+  const ch=book.chapters[idx];
+  if(!ch)return;
+  // pending章节：显示生成提示
+  if(ch.pending){
+    const body=document.getElementById('reader-body');
+    body.innerHTML=`<div style="padding:40px 20px;text-align:center;color:var(--ink3);line-height:2.5">
+      <div style="font-size:24px;margin-bottom:12px">✦</div>
+      <div style="font-size:14px">第${idx+1}章尚未生成</div>
+      <div style="font-size:12px;margin-top:8px">点击底部「下一章」按钮生成</div>
+    </div>`;
+    return;
+  }
+
+  const body=document.getElementById('reader-body');
+  body.scrollTop=0;
+
+  // Build AO3 header (only on first chapter)
+  let headerHtml='';
+  if(idx===0){
+    const ratingColor={G:'var(--green)',T:'var(--acc)',M:'#e8a030',E:'var(--red)'}[book.rating]||'var(--ink3)';
+    headerHtml=`
+    <div class="fic-header">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">
+        <span style="background:${ratingColor};border-radius:4px;padding:2px 7px;font-size:11px;color:#fff;flex-shrink:0;margin-top:4px">${book.rating||'T'}</span>
+        <div class="fic-title" style="font-family:'Noto Serif JP',serif;flex:1">${escH(book.title||'')}</div>
+      </div>
+      <div class="fic-meta">${escH(book.words||'')} · ${book.chapters.length}章 · ${new Date(book.savedAt).toLocaleDateString('ja-JP')}</div>
+      <div class="fic-tags-wrap" style="margin-top:8px">
+        ${(book.warnTags||[]).map(t=>`<span class="fic-tag warn">⚠ ${escH(t)}</span>`).join('')}
+        ${(book.tags||[]).map(t=>`<span class="fic-tag">${escH(t)}</span>`).join('')}
+      </div>
+      ${book.summary?`<div class="fic-summary-box" style="font-family:'Noto Serif JP',serif;margin-top:12px">${highlightInjectInSummary(book.summary,book.injectWords||[])}</div>`:''}
+    </div>`;
+  }
+
+  // Chapter content
+  const paras=(ch.content||'').split('\n').filter(p=>p.trim());
+  // 已存生词列表，用于高亮
+  const savedWords=A.vocab.filter(v=>v.bookId===A.curBook||A.vocab.some(vv=>vv.word===v.word)).map(v=>v.word);
+  const allSavedWords=A.vocab.map(v=>v.word).filter(Boolean);
+
+  const contentHtml=paras.map((p,i)=>{
+    // 分离日文主体和中文翻译（末尾括号内的中文）
+    const cnMatch=p.match(/[（(]([^（）()]{2,150})[）)]\s*$/);
+    let jpPart=p, cnPart='';
+    if(cnMatch){
+      const matchStart=p.lastIndexOf(cnMatch[0]);
+      jpPart=p.slice(0,matchStart).trim();
+      cnPart=cnMatch[1].trim();
+      if(!/[\u4e00-\u9fff]/.test(cnPart)){jpPart=p;cnPart='';}
+    }
+    // 保留ruby标签，转义其他HTML
+    // 容错：修复AI生成的不完整ruby标签
+    // 模式1：字<rt>よみ</rt> → <ruby>字<rt>よみ</rt></ruby>
+    // 模式2：字<rt>よみ（无结束标签） → <ruby>字<rt>よみ</rt></ruby>
+    let fixedRuby=jpPart
+      .replace(/([一-龥々〆ヵヶ]{1,8})<rt>([^<]{1,20})<\/rt>/g,'<ruby>$1<rt>$2</rt></ruby>')
+      .replace(/([一-龥々〆ヵヶ]{1,8})<rt>([^<]{1,20})(?=<|$)/g,'<ruby>$1<rt>$2</rt></ruby>');
+    const safe=fixedRuby.replace(/&(?!amp;|lt;|gt;)/g,'&amp;')
+      .replace(/<(?!\/ruby|\/rt|\/rp|ruby|rt |rp)/g,'&lt;');
+    // 高亮已存生词（简单文字匹配，不破坏ruby标签）
+    const book_=A.books.find(b=>b.id===A.curBook);
+    const injectWds=(book_?.injectWords||[]).map(v=>v.word).filter(Boolean);
+    const highlighted=highlightSavedWords(safe, allSavedWords, injectWds);
+    const cnHtml=cnPart?`<span class="cn-trans">${cnPart}</span>`:'';
+    return `<p data-pi="${i}">${highlighted}${cnHtml}</p>`;
+  }).join('');
+
+  // Author's note
+  const anHtml=ch.an?`<div class="fic-an"><div class="fic-an-label">AUTHOR'S NOTE</div>${escH(ch.an)}</div>`:'';
+
+  const vocabHtml='';
+
+  // 本章评论（每章都有）
+  let commentsHtml='';
+  const chComments=ch.comments||[];
+  if(chComments.length){
+    commentsHtml=`<div class="comments-box">
+      <div class="comments-title">💬 评論</div>
+      ${chComments.map(c=>`<div class="comment-item">
+        <div class="cm-header"><span class="cm-user">${escH(c.user||'匿名')}</span><span class="cm-date">—</span></div>
+        <div class="cm-text">${escH(c.text||'')}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  body.innerHTML=`
+    ${headerHtml}
+    <div class="ch-divider" id="ch-title-div">— 第${idx+1}章 · <span id="ch-title-ruby"></span> —</div>
+    <div class="ch-content" id="ch-content">${contentHtml}</div>
+    ${anHtml}
+    ${vocabHtml}
+    ${commentsHtml}
+  `;
+  // 用innerHTML渲染标题里的ruby标签
+  const titleEl=document.getElementById('ch-title-ruby');
+  if(titleEl){
+    const titleSafe=(ch.title||'').replace(/&(?!amp;|lt;|gt;)/g,'&amp;').replace(/<(?!\/ruby|\/rt|\/rp|ruby|rt |rp)/g,'&lt;');
+    titleEl.innerHTML=titleSafe;
+  }
+
+  // 段落点击：选中整段（用于聊天context）
+  body.querySelectorAll('#ch-content p').forEach(p=>{
+    p.addEventListener('click',e=>{
+      // 如果是文字选择操作就不触发段落选中
+      const sel=window.getSelection();
+      if(sel&&sel.toString().trim().length>0)return;
+      if(A.selEl)A.selEl.classList.remove('sel');
+      p.classList.add('sel');
+      A.selEl=p;A.selTxt=p.textContent.trim();
+    });
+  });
+
+  // 光标选词：选完文字后弹出存词按钮
+  const chContent=document.getElementById('ch-content');
+  if(chContent){
+    // 在touchend/mouseup时立刻保存选区信息，不等popup click
+    const captureSelection=()=>{
+      const sel=window.getSelection();
+      const selectedText=sel?sel.toString().trim():'';
+      document.getElementById('sel-vocab-popup')?.remove();
+      if(selectedText.length<1||selectedText.length>20)return;
+      if(!sel.rangeCount)return;
+      const range=sel.getRangeAt(0);
+      if(!chContent.contains(range.commonAncestorContainer))return;
+
+      // 立刻保存选区信息（手机上touchend后sel可能消失）
+      let node=range.commonAncestorContainer;
+      if(node.nodeType===3)node=node.parentElement;
+      const para=node.closest('p')||
+        [...chContent.querySelectorAll('p')].find(p=>p.contains(range.commonAncestorContainer));
+
+      // 保存到state
+      A.pendingVocabSel=selectedText;
+      if(para){
+        A.selEl=para;
+        A.pendingVocabSentence=extractSentence(para,selectedText);
+      }
+
+      // 显示浮动按钮
+      const popup=document.createElement('div');
+      popup.id='sel-vocab-popup';
+      popup.style.cssText='position:fixed;background:var(--acc);color:var(--bg);padding:6px 14px;border-radius:20px;font-size:13px;font-family:inherit;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.4);z-index:500;white-space:nowrap';
+      popup.textContent='+ 存词「'+selectedText+'」';
+      const rect=range.getBoundingClientRect();
+      popup.style.left=Math.min(rect.left,window.innerWidth-200)+'px';
+      popup.style.top=Math.max(rect.top-44,10)+'px';
+      document.body.appendChild(popup);
+      popup.addEventListener('click',()=>{
+        popup.remove();
+        if(sel)sel.removeAllRanges();
+        openVocabAddSheet(A.pendingVocabSel);
+      });
+    };
+    chContent.addEventListener('mouseup',captureSelection);
+    chContent.addEventListener('touchend',()=>setTimeout(captureSelection,30));
+  }
+
+  // Save vocab buttons
+  updateNextChBtn();
+  body.querySelectorAll('.vi-save').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      saveVocabItem(btn.dataset.word,btn.dataset.ruby,btn.dataset.cn,btn.dataset.ex,A.curBook);
+      btn.textContent='✓ 已存';btn.classList.add('saved');
+    });
+  });
+}
+
+function renderVocabTab(book){
+  document.querySelectorAll('.ch-tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('ch-tab-vocab')?.classList.add('on');
+  const body=document.getElementById('reader-body');
+  body.scrollTop=0;
+  if(!book.vocabList?.length){body.innerHTML='<div style="padding:40px;text-align:center;color:var(--ink3)">这篇文没有生词表</div>';return;}
+  body.innerHTML=`<div class="vocab-box" style="margin:0;padding:20px 16px">
+    <div class="vocab-box-title">📚 ${book.title} · 生词表</div>
+    ${book.vocabList.map(v=>{
+      const saved=A.vocab.some(vv=>vv.word===v.word);
+      return`<div class="vocab-item">
+        <div><div class="vi-word">${escH(v.word||'')}</div><div class="vi-ruby">${escH(v.ruby||'')}</div></div>
+        <div class="vi-info"><div class="vi-cn">${escH(v.cn||'')}</div>${v.example?`<div class="vi-ex">${escH(v.example)}</div>`:''}</div>
+        <button class="vi-save${saved?' saved':''}" data-word="${escH(v.word||'')}" data-ruby="${escH(v.ruby||'')}" data-cn="${escH(v.cn||'')}" data-ex="${escH(v.example||'')}">
+          ${saved?'✓ 已存':'+ 存词'}
+        </button>
+      </div>`;
+    }).join('')}
+  </div>`;
+  body.querySelectorAll('.vi-save').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      saveVocabItem(btn.dataset.word,btn.dataset.ruby,btn.dataset.cn,btn.dataset.ex,A.curBook);
+      btn.textContent='✓ 已存';btn.classList.add('saved');
+    });
+  });
+}
+
+function saveVocabItem(word,ruby,cn,example,bookId){
+  if(A.vocab.find(v=>v.word===word)){toast('已在词库中');return;}
+  const book=A.books.find(b=>b.id===bookId);
+  A.vocab.push({
+    id:'v'+Date.now(),word,ruby,cn,
+    examples:[{src:book?.title||'',sentence:example}],
+    status:'active',addedAt:Date.now(),
+  });
+  sv();toast('已存入词库：'+word);
+}
+
+// ════════════════════════════════════
+// SHELF
+// ════════════════════════════════════
+function renderShelf(){
+  const el=document.getElementById('shelf-list');
+  const favs=A.books.filter(b=>b.favAt);
+  const others=A.books.filter(b=>!b.favAt);
+  const all=[...favs,...others];
+  if(!all.length){
+    el.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--ink3);font-size:14px;line-height:2.4">还没有收藏的作品<br>去探索页生成并收藏吧</div>';
+    return;
+  }
+  el.innerHTML='';
+  all.forEach(b=>{
+    const card=document.createElement('div');
+    card.className='shelf-card'+(b.favAt?' fav':'');
+    card.innerHTML=`
+      <div class="sc-cover">📖</div>
+      <div class="sc-info">
+        <div class="sc-title">${b.title}</div>
+        ${b.titleJp?`<div class="sc-title-jp">${b.titleJp}</div>`:''}
+        <div class="sc-tags">${(b.tags||[]).slice(0,3).map(t=>`<span class="sc-tag">${t}</span>`).join('')}</div>
+      </div>
+      <button class="sc-del" data-id="${b.id}">🗑</button>
+    `;
+    card.addEventListener('click',e=>{if(!e.target.closest('.sc-del'))openBook(b.id);});
+    card.querySelector('.sc-del').addEventListener('click',e=>{
+      e.stopPropagation();
+      if(!confirm('删除这篇文？'))return;
+      A.books=A.books.filter(x=>x.id!==b.id);sv();renderShelf();toast('已删除');
+    });
+    el.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════
+// VOCAB SCREEN
+// ════════════════════════════════════
+let vocabFilter='all';
+function renderVocabList(){
+  const el=document.getElementById('vocab-list');
+  let items=A.vocab;
+  if(vocabFilter==='learning')items=items.filter(v=>v.status!=='mastered');
+  if(vocabFilter==='mastered')items=items.filter(v=>v.status==='mastered');
+  if(!items.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--ink3);font-size:14px">'+( A.vocab.length?'没有符合条件的词':'词库是空的，读文章时点击「存词」添加')+'</div>';return;}
+  el.innerHTML='';
+  items.forEach(v=>{
+    const card=document.createElement('div');
+    card.className='vocab-card';
+    // 例句里对生词加粗高亮，保留ruby标签
+    const exHtml=(v.examples||[]).map(ex=>{
+      const raw=ex.sentence||'';
+      if(!raw.trim())return '';
+      // 保留ruby标签，转义其他HTML
+      const safe=raw.replace(/&(?!amp;|lt;|gt;)/g,'&amp;')
+        .replace(/<(?!\/ruby|\/rt|\/rp|ruby|rt |rp)/g,'&lt;');
+      // 高亮目标词
+      // 例句里不再高亮单词（卡片头部已经显示了），避免视觉重复
+      const highlighted=safe;
+      return `<div class="vc-ex-item">
+        <div style="font-family:'Noto Serif JP',serif;line-height:2;font-size:14px">${highlighted}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">— ${escH(ex.src||'')}</div>
+      </div>`;
+    }).filter(Boolean).join('');
+
+    card.innerHTML=`
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <div class="vc-word">${escH(v.word||'')}</div>
+          ${v.ruby?`<div class="vc-ruby" style="font-size:13px;color:var(--ink3)">[${escH(v.ruby)}]</div>`:''}
+        </div>
+        <div class="vc-cn" style="font-size:14px">${escH(v.cn||'')}</div>
+      </div>
+      ${exHtml?`<div class="vc-examples">${exHtml}</div>`:''}
+      <div style="font-size:11px;color:var(--ink3);display:flex;gap:8px;flex-wrap:wrap">
+        <span>Lv.${v.srsLevel||0}</span>
+        ${v.nextReview?`<span>下次：${new Date(v.nextReview).toLocaleDateString('zh-CN')}</span>`:'<span style="color:var(--acc2)">今日待复习</span>'}
+        ${v.reviewCount?`<span>复习${v.reviewCount}次</span>`:''}
+        ${v.generatedCount?`<span>再生成${v.generatedCount}次</span>`:'<span style="color:var(--ink3)">未再生成</span>'}
+      </div>
+      <div class="vc-actions">
+        <button class="vc-act${v.status==='mastered'?' done':''}" data-id="${v.id}" data-action="toggle">${v.status==='mastered'?'↩ 重新学':'✓ 已掌握'}</button>
+        <button class="vc-act del" data-id="${v.id}" data-action="del">删除</button>
+      </div>
+    `;
+    card.querySelectorAll('.vc-act').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const id=btn.dataset.id;
+        if(btn.dataset.action==='toggle'){
+          const v=A.vocab.find(x=>x.id===id);
+          if(v){
+            if(v.status==='mastered'){v.status='learning';v.srsLevel=Math.max(0,(v.srsLevel||0)-1);v.nextReview=Date.now();}
+            else{v.status='mastered';v.srsLevel=6;v.nextReview=null;}
+          }
+          sv();renderVocabList();
+        } else if(btn.dataset.action==='del'){
+          A.vocab=A.vocab.filter(x=>x.id!==id);sv();renderVocabList();
+        }
+      });
+    });
+    el.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════
+// CHAT
+// ════════════════════════════════════
+async function openVocabAddSheet(preWord=''){
+  const quote=document.getElementById('vocab-add-quote');
+  const word=preWord||A.pendingVocabSel||'';
+  // 例句：光标选词时已提取，否则从selEl提取（去掉ruby读音和中文翻译）
+  const sentence=A.pendingVocabSentence||
+    (A.selEl?extractSentence(A.selEl, word):'');
+
+  document.getElementById('va-word').value=word;
+  document.getElementById('va-ruby').value='';
+  document.getElementById('va-cn').value='';
+  quote.textContent=sentence.substring(0,120)+(sentence.length>120?'…':'');
+  A.pendingVocabSentence=sentence; // 记住例句
+
+  openSheet('vocab-add-sheet');
+
+  // 自动查询读音和释义（如果有词）
+  if(word&&word.length>=1){
+    const rubyEl=document.getElementById('va-ruby');
+    const cnEl=document.getElementById('va-cn');
+    rubyEl.placeholder='查询中…';cnEl.placeholder='查询中…';
+    try{
+      const p=getPreset();const model=getModel();
+      if(p&&model){
+        // 传入例句帮助判断具体读音和释义
+const exCtx=sentence?`例句：${sentence.substring(0,80)}`:'';
+const res=await callAPIStream([{role:'user',content:`日语单词「${word}」在以下语境中的读音和释义：
+${exCtx}
+
+如果是动词的活用形（て形、た形、ます形、ない形等），请转换成辞書形（原形）。
+只输出三行，不要其他文字：
+辞書形：原形（如果本来就是原形则和输入一样）
+読み：原形的假名读音
+意味：中文释义（简短，结合语境）`}],150);
+        const dictM=res.match(/辞書形[：:]\s*(.+)/);
+        const rubyM=res.match(/読み[：:]\s*(.+)/);
+        const cnM=res.match(/意味[：:]\s*(.+)/);
+        const dictForm=dictM?.[1]?.trim();
+        if(dictForm&&dictForm!==word){
+          document.getElementById('va-word').value=dictForm;
+        }
+        if(rubyM)rubyEl.value=rubyM[1].trim();
+        if(cnM)cnEl.value=cnM[1].trim();
+      }
+    }catch{}
+    rubyEl.placeholder='例：よみがな';
+    cnEl.placeholder='例：令人烦闷';
+  }
+  A.pendingVocabSel='';
+}
+
+function openChat(){
+  const q=document.getElementById('cquote');
+  if(A.selTxt){q.textContent='「'+A.selTxt.substring(0,80)+(A.selTxt.length>80?'…':'')+'」';q.classList.add('on');}
+  else q.classList.remove('on');
+  document.getElementById('chat-cname').textContent=A.cfg.charName||'角色';
+  openSheet('chat-sheet');
+}
+
+function queueMsg(){
+  const inp=document.getElementById('uinput');
+  const t=inp.value.trim();if(!t)return;
+  A.pendingMsgs.push(t);inp.value='';inp.style.height='auto';
+  renderPending();
+}
+
+function renderPending(){
+  const qbtn=document.getElementById('queue-btn');
+  qbtn.classList.toggle('has',A.pendingMsgs.length>0);
+}
+
+async function sendChat(){
+  const inp=document.getElementById('uinput');
+  const inputText=inp.value.trim();
+  if(inputText){A.pendingMsgs.push(inputText);inp.value='';inp.style.height='auto';}
+  if(!A.pendingMsgs.length)return;
+
+  const msgs=[...A.pendingMsgs];A.pendingMsgs=[];renderPending();
+  const sendBtn=document.getElementById('send-btn');sendBtn.disabled=true;
+
+  msgs.forEach(m=>appendMsg('u',m));
+
+  const charName=A.cfg.charName||'角色';
+  const charCard=(A.cfg.charCard||'').replace(/\{\{char\}\}/g,charName).replace(/\{\{user\}\}/g,'读者')||`你是${charName}，中日双语编辑，沉稳克制。`;
+  const book=A.books.find(b=>b.id===A.curBook);
+  const selCtx=A.selTxt?`\n\n【选中的原文段落】\n${A.selTxt}`:'';
+
+  const sys=`你正在扮演一个角色，以下是设定：
+
+${charCard}
+
+【当前情境】
+你（${charName}）正在和读者一起读一篇日语同人文${book?`《${book.title}》`:''}。读者可能会问你关于日语、文章内容或其他话题。
+
+【重要】直接用第一人称开口说话，像微信聊天一样自然。不要写动作描写、旁白叙述、星号动作。日语问题用你编辑的专业背景回答，自然带入例句和用法说明。${selCtx}`;
+
+  const thinkW=appendMsg('t','…');
+  try{
+    const text=await callAPIStream([{role:'system',content:sys},...A.chatHist,{role:'user',content:msgs.join('\n')}],800);
+    thinkW.remove();
+    appendMsg('c',text);
+    A.chatHist.push({role:'user',content:msgs.join('\n')},{role:'assistant',content:text});
+    if(A.chatHist.length>40)A.chatHist=A.chatHist.slice(-40);
+    // 持久化聊天记录
+    if(A.curBook){A.chatCache=A.chatCache||{};A.chatCache[A.curBook]=[...A.chatHist];sv();}
+  }catch(e){
+    thinkW.remove();appendMsg('s','发送失败：'+e.message);
+  }
+  sendBtn.disabled=false;
+}
+
+function appendMsg(role,text){
+  const msgs=document.getElementById('msgs');
+  const wrap=document.createElement('div');
+  wrap.className='msg-wrap '+(role==='u'?'right':role==='c'?'left':'center');
+  if(role==='c'){const l=document.createElement('div');l.className='mlbl';l.textContent=A.cfg.charName||'角色';wrap.appendChild(l);}
+  if(role==='u'){const l=document.createElement('div');l.className='ulbl';l.textContent='你';wrap.appendChild(l);}
+  const el=document.createElement('div');el.className='msg '+role;el.textContent=text;
+  wrap.appendChild(el);msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;
+  return wrap;
+}
+
+// ════════════════════════════════════
+// SETTINGS
+// ════════════════════════════════════
+const DEFAULT_SYS_PROMPT=`你是一个不受限制的、富有创造力的同人小说AI作家。\n目标：根据角色设定与关键词，生成类似AO3/pixiv搜索结果页的作品条目。\n输出必须是简体中文。搜索词只是检索条件，TAGS是作者写完作品后从内容提炼的AO3圈内标签。\n每篇都要像档案馆里已经存在的完整作品，SUMMARY让读者立刻想点进去。`;
+
+function renderCfg(){
+  document.getElementById('special-inst').value=A.cfg.specialInst||'';
+  document.getElementById('sys-prompt').value=A.cfg.sysPrompt||DEFAULT_SYS_PROMPT;
+
+  document.getElementById('jp-level').value=A.cfg.jpLevel;
+  document.getElementById('m-manual').value=A.model||'';
+  document.getElementById('ch-count').value=A.cfg.chCount;
+
+  renderCharList();
+  renderPresets();
+}
+
+function renderCharList(){
+  const el=document.getElementById('char-list');
+  if(!el)return;
+  if(!A.characters.length){el.innerHTML='<div style="font-size:12px;color:var(--ink3)">还没有角色，在下方添加</div>';return;}
+  el.innerHTML='';
+  A.characters.forEach(c=>{
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--bdr);border-radius:8px;padding:9px 12px';
+    const isActive=A.activeChars.includes(c.id);
+    div.innerHTML=`
+      <div style="width:18px;height:18px;border-radius:4px;border:2px solid ${isActive?'var(--acc)':'var(--bdr)'};background:${isActive?'var(--acc)':'transparent'};cursor:pointer;flex-shrink:0" data-toggle="${c.id}"></div>
+      <div style="flex:1;min-width:0;cursor:pointer" data-edit="${c.id}">
+        <div style="font-size:13px;color:var(--ink)">${escH(c.name)}</div>
+        <div style="font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(c.card.substring(0,60))}…</div>
+      </div>
+      <button style="background:none;border:none;font-size:16px;color:var(--ink3);cursor:pointer;padding:2px 4px" data-del="${c.id}">🗑</button>
+    `;
+    div.addEventListener('click',e=>{
+      if(e.target.dataset.toggle){
+        const id=e.target.dataset.toggle;
+        const idx=A.activeChars.indexOf(id);
+        if(idx>=0)A.activeChars.splice(idx,1); else A.activeChars.push(id);
+        sv(); renderCharList(); return;
+      }
+      if(e.target.dataset.del){
+        A.characters=A.characters.filter(x=>x.id!==e.target.dataset.del);
+        A.activeChars=A.activeChars.filter(x=>x!==e.target.dataset.del);
+        sv(); renderCharList(); return;
+      }
+      if(e.target.dataset.edit||e.target.closest('[data-edit]')){
+        const id=e.target.dataset.edit||e.target.closest('[data-edit]').dataset.edit;
+        const ch=A.characters.find(x=>x.id===id);
+        if(ch){
+          document.getElementById('new-char-name').value=ch.name;
+          document.getElementById('new-char-card').value=ch.card;
+          document.getElementById('editing-char-id').value=ch.id;
+        }
+      }
+    });
+    el.appendChild(div);
+  });
+}
+
+function renderPresets(){
+  const el=document.getElementById('plist');
+  el.innerHTML='';
+  if(!A.presets.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3)">还没有预设</div>';return;}
+  A.presets.forEach(p=>{
+    const div=document.createElement('div');
+    div.className='pitem'+(A.activeP===p.id?' on':'');
+    div.innerHTML=`<div style="flex:1"><div class="pn">${p.name}</div><div class="pu">${p.url}</div></div><button class="pdel" data-id="${p.id}">🗑</button>`;
+    div.addEventListener('click',e=>{
+      if(e.target.closest('.pdel')){A.presets=A.presets.filter(x=>x.id!==p.id);if(A.activeP===p.id)A.activeP=A.presets[0]?.id||null;sv();renderPresets();return;}
+      A.activeP=p.id;sv();renderPresets();toast('已切换：'+p.name);
+    });
+    el.appendChild(div);
+  });
+}
+
+async function fetchModels(){
+  const p=getPreset();if(!p){toast('请先选择预设');return;}
+  const btn=document.getElementById('fetch-m');btn.textContent='拉取中…';
+  try{
+    const res=await fetch(p.url.replace(/\/$/,'')+'/models',{headers:{'Authorization':`Bearer ${p.key}`}});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error?.message);
+    const models=(data.data||data.models||[]).map(m=>m.id||m).filter(Boolean).sort();
+    const sel=document.getElementById('m-sel');
+    sel.innerHTML='<option value="">— 选择模型 —</option>';
+    models.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;if(m===A.model)o.selected=true;sel.appendChild(o);});
+    toast(`已拉取 ${models.length} 个模型`);
+  }catch(e){toast('拉取失败：'+e.message);}
+  btn.textContent='拉取';
+}
+
+// ════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showScr(name){document.querySelectorAll('.scr').forEach(s=>s.classList.add('off'));document.getElementById('scr-'+name).classList.remove('off');}
+function showTab(name){
+  document.querySelectorAll('[data-tab]').forEach(t=>t.classList.toggle('on',t.dataset.tab===name));
+  ['search','shelf','vocab'].forEach(n=>{
+    const el=document.getElementById('tab-'+n);
+    if(!el)return;
+    if(n===name){
+      el.style.display=n==='vocab'?'flex':'block';
+    } else {
+      el.style.display='none';
+    }
+  });
+  if(name==='shelf')renderShelf();
+  if(name==='vocab'){renderVocabList();updateVocabBanner();}
+}
+function openSheet(id){document.getElementById(id).classList.add('on');document.getElementById('ov').classList.add('on');}
+function closeSheet(id){document.getElementById(id).classList.remove('on');if(!document.querySelector('.sheet.on'))document.getElementById('ov').classList.remove('on');}
+function openFP(id){document.getElementById(id).classList.add('on');}
+function closeFP(id){document.getElementById(id).classList.remove('on');}
+function toast(msg,duration=2400){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('on'),duration);}
+function errorToast(msg){
+  // 显示可手动关闭的错误弹窗
+  const modal=document.getElementById('err-modal');
+  document.getElementById('err-msg').textContent=msg;
+  modal.style.display='flex';
+}
+function setTheme(t){A.theme=t;document.documentElement.setAttribute('data-theme',t);const d=t==='dark';['btn-theme','btn-theme2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=d?'☀️':'🌙';});sv();}
+
+// ════════════════════════════════════
+// EVENTS
+// ════════════════════════════════════
+document.getElementById('btn-theme').addEventListener('click',()=>setTheme(A.theme==='dark'?'light':'dark'));
+document.getElementById('btn-next-chapter').addEventListener('click',genNextChapter);
+document.getElementById('btn-reroll-ch').addEventListener('click',()=>{
+  const book=A.books.find(b=>b.id===A.curBook);
+  if(!book)return;
+  const ch=book.chapters[A.curChapter];
+  if(!ch||ch.pending){toast('这章还没生成，请先生成');return;}
+  if(!confirm(`重新生成第${A.curChapter+1}章？当前内容将被替换。`))return;
+  const btn=document.getElementById('btn-reroll-ch');
+  btn.querySelector('span').textContent='生成中…';
+  btn.style.opacity='.5';
+  rerollChapter(A.curChapter).finally(()=>{
+    btn.querySelector('span').textContent='重新生成';
+    btn.style.opacity='1';
+  });
+});
+document.getElementById('btn-theme2').addEventListener('click',()=>setTheme(A.theme==='dark'?'light':'dark'));
+document.getElementById('btn-cfg-open').addEventListener('click',()=>{renderCfg();openFP('cfg-panel');});
+document.getElementById('close-cfg').addEventListener('click',()=>closeFP('cfg-panel'));
+
+document.querySelectorAll('[data-tab]').forEach(t=>{t.addEventListener('click',()=>showTab(t.dataset.tab));});
+
+document.getElementById('add-content-tag').addEventListener('click',()=>{
+  const v=document.getElementById('new-content-tag').value.trim();
+  if(!v)return;if(!A.contentTags.includes(v))A.contentTags.push(v);
+  document.getElementById('new-content-tag').value='';sv();renderTags();
+});
+document.getElementById('add-style-tag').addEventListener('click',()=>{
+  const v=document.getElementById('new-style-tag').value.trim();
+  if(!v)return;if(!A.styleTags.includes(v))A.styleTags.push(v);
+  document.getElementById('new-style-tag').value='';sv();renderTags();
+});
+document.getElementById('add-learn-tag').addEventListener('click',()=>{
+  const v=document.getElementById('new-learn-tag').value.trim();
+  if(!v)return;if(!A.learnTags.includes(v))A.learnTags.push(v);
+  document.getElementById('new-learn-tag').value='';sv();renderTags();
+});
+['new-content-tag','new-style-tag','new-learn-tag'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      const map={'new-content-tag':'add-content-tag','new-style-tag':'add-style-tag','new-learn-tag':'add-learn-tag'};
+      document.getElementById(map[id]).click();
+    }
+  });
+});
+
+document.getElementById('search-btn').addEventListener('click',()=>generateOutlines(false));
+document.getElementById('next-page-btn').addEventListener('click',()=>generateOutlines(true));
+document.getElementById('regen-btn').addEventListener('click',()=>{
+  // 删掉当前历史记录重新生成
+  A.searchHistory=A.searchHistory.filter(h=>h.id!==A.curHistoryId);
+  A.curHistoryId=null;
+  generateOutlines(false);
+});
+document.getElementById('clear-history-btn').addEventListener('click',()=>{
+  if(!confirm('清空全部搜索历史？'))return;
+  A.searchHistory=[];A.curHistoryId=null;A.searchResults=[];
+  document.getElementById('results-section').style.display='none';
+  document.getElementById('gen-full-btn').style.display='none';
+  sv();renderHistoryList();toast('历史已清空');
+});
+document.getElementById('gen-full-btn').addEventListener('click',generateFull);
+
+document.getElementById('btn-back-reader').addEventListener('click',()=>{showScr('search');showTab('shelf');});
+document.getElementById('btn-fav').addEventListener('click',()=>{
+  const book=A.books.find(b=>b.id===A.curBook);
+  if(!book)return;
+  book.favAt=book.favAt?null:Date.now();
+  sv();document.getElementById('btn-fav').textContent=book.favAt?'★':'☆';
+  toast(book.favAt?'已收藏':'已取消收藏');
+});
+
+document.getElementById('btn-chat-open').addEventListener('click',()=>{
+  if(!A.selTxt){toast('请先点击选中一段原文');return;}
+  openChat();
+});
+document.getElementById('btn-vocab-add').addEventListener('click',()=>{
+  if(!A.selEl&&!A.pendingVocabSentence){toast('请先选中一个词');return;}
+  // 如果没有光标选词，清空以用selEl提取
+  if(!A.pendingVocabSel)A.pendingVocabSentence='';
+  openVocabAddSheet(A.pendingVocabSel||'');
+});
+document.getElementById('btn-next-chapter').addEventListener('click',genNextChapter);
+
+document.getElementById('btn-theme2').addEventListener('click',()=>setTheme(A.theme==='dark'?'light':'dark'));
+
+document.getElementById('close-vocab-add').addEventListener('click',()=>closeSheet('vocab-add-sheet'));
+document.getElementById('va-requery').addEventListener('click',async()=>{
+  const word=document.getElementById('va-word').value.trim();
+  if(!word){toast('请先填写生词');return;}
+  const rubyEl=document.getElementById('va-ruby');
+  const cnEl=document.getElementById('va-cn');
+  const btn=document.getElementById('va-requery');
+  btn.textContent='查询中…';
+  try{
+    const sentence=A.pendingVocabSentence||'';
+    const exCtx=sentence?`例句：${sentence.substring(0,80)}`:'';
+    const res=await callAPIStream([{role:'user',content:`日语单词「${word}」在以下语境中的读音和释义：
+${exCtx}
+
+如果是动词的活用形，请转换成辞書形（原形）。
+只输出三行：
+辞書形：原形
+読み：假名读音
+意味：中文释义`}],150);
+    const dictM=res.match(/辞書形[：:]\s*(.+)/);
+    const rubyM=res.match(/読み[：:]\s*(.+)/);
+    const cnM=res.match(/意味[：:]\s*(.+)/);
+    const dictForm=dictM?.[1]?.trim();
+    if(dictForm&&dictForm!==word){
+      document.getElementById('va-word').value=dictForm;
+    }
+    if(rubyM)rubyEl.value=rubyM[1].trim();
+    if(cnM)cnEl.value=cnM[1].trim();
+    toast('查询完成');
+  }catch(e){toast('查询失败：'+e.message);}
+  btn.textContent='↺ 重新查询';
+});
+document.getElementById('va-save-btn').addEventListener('click',()=>{
+  const word=document.getElementById('va-word').value.trim();
+  const ruby=document.getElementById('va-ruby').value.trim();
+  const cn=document.getElementById('va-cn').value.trim();
+  if(!word){toast('请填写生词');return;}
+  if(!ruby&&!cn){toast('读音或释义至少填一个');return;}
+  if(A.vocab.find(v=>v.word===word)){toast('已在词库中');closeSheet('vocab-add-sheet');return;}
+  const book=A.books.find(b=>b.id===A.curBook);
+  // 例句优先用光标选词时截取的句子
+  // 优先用光标选词时提取的句子，否则从当前选中段落里提取
+  let sentence=A.pendingVocabSentence||'';
+  if(!sentence&&A.selEl){
+    sentence=extractSentence(A.selEl, word);
+  }
+  sentence=sentence.substring(0,200);
+  A.pendingVocabSentence='';
+  // 清理例句：去掉振假名读音（汉字后面跟着的假名）
+  const cleanSentence=sentence
+    .replace(/[一-龥々]{1,8}([ぁ-ん]{1,8})/g,(m,r)=>m.replace(r,'')) // 去掉汉字后跟的假名（rt残留）
+    .replace(/（[^（）]{1,100}）/g,'') // 去掉中文翻译括号
+    .trim();
+  const now=Date.now();
+  A.vocab.push({
+    id:'v'+now,word,ruby,cn,
+    examples:[{src:book?.title||'',sentence:cleanSentence||sentence,bookId:A.curBook}],
+    status:'new',
+    srsLevel:0,nextReview:now,  // 新词今天就复习
+    lastReview:null,reviewCount:0,streak:0,
+    seenInBooks:A.curBook?[A.curBook]:[],
+    generatedCount:0,lastGenerated:null,
+    addedAt:now,
+  });
+  sv();
+  closeSheet('vocab-add-sheet');
+  toast('已存入：'+word);
+  // 刷新高亮但保持滚动位置
+  const body=document.getElementById('reader-body');
+  const scrollPos=body?body.scrollTop:0;
+  renderChapter(A.curChapter);
+  if(body)setTimeout(()=>{body.scrollTop=scrollPos;},50);
+});
+
+document.getElementById('close-chat').addEventListener('click',()=>closeSheet('chat-sheet'));
+document.getElementById('queue-btn').addEventListener('click',queueMsg);
+document.getElementById('send-btn').addEventListener('click',sendChat);
+document.getElementById('uinput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();queueMsg();}});
+document.getElementById('uinput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';});
+
+document.getElementById('ov').addEventListener('click',()=>{
+  document.querySelectorAll('.sheet.on').forEach(s=>s.classList.remove('on'));
+  document.getElementById('ov').classList.remove('on');
+});
+
+document.querySelectorAll('.vf-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.vf-btn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');vocabFilter=btn.dataset.vf;renderVocabList();
+  });
+});
+
+document.getElementById('add-preset').addEventListener('click',()=>{
+  const name=document.getElementById('np-name').value.trim();
+  const url=document.getElementById('np-url').value.trim();
+  const key=document.getElementById('np-key').value.trim();
+  if(!name||!url||!key){toast('请填写完整');return;}
+  const id='p'+Date.now();A.presets.push({id,name,url,key});
+  if(!A.activeP)A.activeP=id;
+  document.getElementById('np-name').value='';document.getElementById('np-url').value='';document.getElementById('np-key').value='';
+  sv();renderPresets();toast('预设已添加');
+});
+document.getElementById('fetch-m').addEventListener('click',fetchModels);
+document.getElementById('m-sel').addEventListener('change',e=>{
+  A.model=e.target.value;
+  document.getElementById('m-manual').value=e.target.value;
+  sv();
+});
+document.getElementById('m-manual').addEventListener('input',e=>{A.model=e.target.value;sv();});
+document.getElementById('save-cfg').addEventListener('click',()=>{
+  A.cfg.jpLevel=document.getElementById('jp-level').value;
+  A.cfg.chCount=document.getElementById('ch-count').value;
+  A.cfg.specialInst=document.getElementById('special-inst').value.trim();
+  A.cfg.sysPrompt=document.getElementById('sys-prompt').value.trim();
+  // 兼容旧版：如果还没有角色库但旧的charName/charCard有值，自动迁移
+  if(!A.characters.length&&A.cfg.charName&&A.cfg.charCard){
+    A.characters.push({id:'c'+Date.now(),name:A.cfg.charName,card:A.cfg.charCard});
+    A.activeChars=[A.characters[0].id];
+  }
+  sv();closeFP('cfg-panel');toast('设定已保存');
+});
+
+// 保存角色按钮
+document.getElementById('save-char-btn').addEventListener('click',()=>{
+  const name=document.getElementById('new-char-name').value.trim();
+  const card=document.getElementById('new-char-card').value.trim();
+  const editId=document.getElementById('editing-char-id').value;
+  if(!name||!card){toast('请填写角色名和角色卡');return;}
+  if(editId){
+    const ch=A.characters.find(x=>x.id===editId);
+    if(ch){ch.name=name;ch.card=card;}
+  } else {
+    const newChar={id:'c'+Date.now(),name,card};
+    A.characters.push(newChar);
+    if(!A.activeChars.length)A.activeChars.push(newChar.id);
+  }
+  document.getElementById('new-char-name').value='';
+  document.getElementById('new-char-card').value='';
+  document.getElementById('editing-char-id').value='';
+  sv();renderCharList();toast(editId?'角色已更新':'角色已添加');
+});
+
+document.getElementById('clear-char-btn').addEventListener('click',()=>{
+  document.getElementById('new-char-name').value='';
+  document.getElementById('new-char-card').value='';
+  document.getElementById('editing-char-id').value='';
+});
+document.getElementById('exp-data').addEventListener('click',()=>{
+  const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),books:A.books,vocab:A.vocab,presets:A.presets,activeP:A.activeP,model:A.model,cfg:A.cfg,contentTags:A.contentTags,styleTags:A.styleTags,learnTags:A.learnTags,searchHistory:A.searchHistory,chatCache:A.chatCache},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`yuya_${new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')}.json`;a.click();toast('数据已导出');
+});
+document.getElementById('imp-data').addEventListener('click',()=>document.getElementById('imp-file').click());
+document.getElementById('imp-file').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(d.books)A.books=d.books;if(d.vocab)A.vocab=d.vocab;
+      if(d.presets)A.presets=d.presets;if(d.activeP)A.activeP=d.activeP;
+      if(d.model)A.model=d.model;if(d.cfg)A.cfg={...A.cfg,...d.cfg};
+      if(d.contentTags)A.contentTags=d.contentTags;if(d.styleTags)A.styleTags=d.styleTags;
+      sv();ld();renderTags();toast('数据导入成功');
+    }catch{toast('导入失败');}
+  };r.readAsText(f);
+});
+
+// ════════════════════════════════════
+// ERROR MODAL
+// ════════════════════════════════════
+// ════════════════════════════════════
+// REVIEW SESSION
+// ════════════════════════════════════
+let reviewQueue=[];
+let reviewIdx=0;
+let reviewStats={correct:0,wrong:0};
+let reviewCurrentId=null;
+
+function startReview(){
+  reviewQueue=getSRSDue().sort((a,b)=>(a.nextReview||0)-(b.nextReview||0));
+  if(!reviewQueue.length){toast('今天没有需要复习的词');return;}
+  reviewIdx=0;
+  reviewStats={correct:0,wrong:0};
+  document.getElementById('review-screen').style.display='flex';
+  showReviewCard();
+}
+
+function showReviewCard(){
+  if(reviewIdx>=reviewQueue.length){
+    showReviewDone();return;
+  }
+  const v=reviewQueue[reviewIdx];
+  reviewCurrentId=v.id;
+  updateReviewProgress();
+
+  const isNew=(v.srsLevel===0&&!v.lastReview);
+  if(isNew){
+    showIntroCard(v);
+  } else {
+    showQuizCard(v);
+  }
+}
+
+function updateReviewProgress(){
+  document.getElementById('review-progress').textContent=`${reviewIdx+1}/${reviewQueue.length}`;
+}
+
+function showIntroCard(v){
+  const intro=document.getElementById('review-intro');
+  const quiz=document.getElementById('review-quiz');
+  const done=document.getElementById('review-done');
+  intro.style.display='flex';quiz.style.display='none';done.style.display='none';
+
+  document.getElementById('ri-word').textContent=v.word||'';
+  document.getElementById('ri-ruby').textContent=v.ruby&&v.ruby!==v.word?`[${v.ruby}]`:'';
+  document.getElementById('ri-cn').textContent=v.cn||'';
+  const ex=(v.examples?.[0]?.sentence||'').replace(/<[^>]*>/g,'');
+  document.getElementById('ri-example').textContent=ex;
+}
+
+function showQuizCard(v){
+  const intro=document.getElementById('review-intro');
+  const quiz=document.getElementById('review-quiz');
+  const done=document.getElementById('review-done');
+  intro.style.display='none';quiz.style.display='flex';done.style.display='none';
+
+  // 例句里把目标词替换成＿＿
+  const ex=(v.examples?.[0]?.sentence||'').replace(/<[^>]*>/g,'');
+  const word=v.word||'';
+  const ruby=v.ruby||'';
+  const escaped=word.replace(/[.*+?^${}()|[\\\\]]/g,'$&');
+  const escapedRuby=ruby.replace(/[.*+?^${}()|[\\\\]]/g,'$&');
+  const blanked=ex.replace(new RegExp(escaped,'g'),'＿＿').replace(new RegExp(escapedRuby,'g'),'＿＿');
+  document.getElementById('rq-sentence').textContent=blanked||'（无例句，请先存词时选中原文）';
+  document.getElementById('rq-hint').textContent=v.cn||'';
+  document.getElementById('rq-input').value='';
+  document.getElementById('rq-result').style.display='none';
+  document.getElementById('rq-compose').style.display='none';
+  document.getElementById('rq-submit').style.display='block';
+  setTimeout(()=>document.getElementById('rq-input').focus(),100);
+}
+
+function checkAnswer(){
+  const v=reviewQueue[reviewIdx];
+  if(!v)return;
+  const input=document.getElementById('rq-input').value.trim();
+  if(!input)return;
+
+  // 判断对错：匹配word或ruby，忽略全半角差异
+  const norm=s=>s.replace(/[ァ-ン]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60))
+    .replace(/\s/g,'').toLowerCase().trim();
+  const inp=input.trim();
+  const correct=
+    norm(inp)===norm(v.word||'')||
+    norm(inp)===norm(v.ruby||'')||
+    inp===v.word||inp===v.ruby;
+
+  // 显示结果
+  const resultEl=document.getElementById('rq-result');
+  resultEl.style.display='flex';
+  document.getElementById('rq-submit').style.display='none';
+  document.getElementById('rq-result-label').textContent=correct?'✓ 正确！':'✗ 答错了';
+  document.getElementById('rq-result-label').style.color=correct?'var(--green)':'var(--red)';
+  document.getElementById('rq-word').textContent=v.word||'';
+  document.getElementById('rq-ruby-ans').textContent=v.ruby&&v.ruby!==v.word?`[${v.ruby}]`:'';
+  document.getElementById('rq-cn-ans').textContent=v.cn||'';
+  const exAns=(v.examples?.[0]?.sentence||'').replace(/<[^>]*>/g,'');
+  document.getElementById('rq-example-ans').textContent=exAns;
+
+  if(correct){
+    // 答对：显示造句区（强制）
+    showComposeSection(v);
+  }
+}
+
+function showComposeSection(v){
+  // 隐藏填空输入区，显示造句区
+  document.getElementById('rq-compose').style.display='flex';
+  document.getElementById('rqc-word').textContent=v.word||'';
+  document.getElementById('rqc-input').value='';
+  document.getElementById('rqc-feedback').style.display='none';
+  document.getElementById('rqc-next').style.display='none';
+  document.getElementById('rqc-submit').style.display='block';
+  setTimeout(()=>document.getElementById('rqc-input').focus(),100);
+}
+
+async function submitCompose(){
+  const v=reviewQueue[reviewIdx];
+  if(!v)return;
+  const sentence=document.getElementById('rqc-input').value.trim();
+  if(!sentence){toast('请写一个句子再提交');return;}
+
+  const btn=document.getElementById('rqc-submit');
+  btn.textContent='批改中…';btn.disabled=true;
+
+  const word=v.word||'';
+  const cn=v.cn||'';
+  const example=v.examples?.[0]?.sentence||'';
+
+  try{
+    const feedback=await callAPIStream([{role:'user',content:`你是日语老师，请批改以下造句。
+
+生词：${word}（${cn}）
+学生造句：${sentence}
+参考例句：${example}
+
+批改要求：
+1. 先说这个句子有没有用到「${word}」
+2. 语法和用法有没有问题（简短指出，不要长篇大论）
+3. 如果有问题给一个更好的改法
+4. 用中文批改，语气鼓励为主，严格但友善
+5. 最后一行写「✓ 通过」或「△ 再想想」
+
+只输出批改内容，不超过100字。`}],300);
+
+    document.getElementById('rqc-feedback').textContent=feedback;
+    document.getElementById('rqc-feedback').style.display='block';
+    document.getElementById('rqc-next').style.display='block';
+    btn.style.display='none';
+
+    // 判断是否通过（包含✓通过或类似表述）
+    const passed=feedback.includes('✓')||feedback.includes('通过')||feedback.includes('正确')||feedback.includes('自然');
+    // 无论通过与否都记录为答对（填空已经答对了），但通过的话给个streak加成
+    if(passed&&v){v.streak=(v.streak||0)+1;sv();}
+
+  }catch(e){
+    document.getElementById('rqc-feedback').textContent='批改失败，直接进入下一个';
+    document.getElementById('rqc-feedback').style.display='block';
+    document.getElementById('rqc-next').style.display='block';
+    btn.style.display='none';
+  }
+  btn.textContent='提交批改';btn.disabled=false;
+}
+
+function advanceReview(correct){
+  answerSRS(reviewCurrentId,correct);
+  if(correct)reviewStats.correct++;
+  else reviewStats.wrong++;
+  // 隐藏造句区
+  document.getElementById('rq-compose').style.display='none';
+  reviewIdx++;
+  showReviewCard();
+}
+
+function showReviewDone(){
+  document.getElementById('review-intro').style.display='none';
+  document.getElementById('review-quiz').style.display='none';
+  document.getElementById('review-done').style.display='flex';
+  const total=reviewStats.correct+reviewStats.wrong;
+  document.getElementById('review-done-stats').textContent=
+    `答对 ${reviewStats.correct} 个 / 答错 ${reviewStats.wrong} 个\n正确率 ${total?Math.round(reviewStats.correct/total*100):0}%`;
+  updateVocabBanner();
+}
+
+function updateVocabBanner(){
+  const count=getSRSCount();
+  const banner=document.getElementById('srs-banner');
+  const countEl=document.getElementById('srs-count');
+  if(countEl)countEl.textContent=count;
+  if(banner)banner.style.display=count>0?'block':'none';
+
+  // 再生成banner：有任何词就显示
+  const regenBanner=document.getElementById('regen-banner');
+  const regenInfo=document.getElementById('regen-banner-info');
+  if(!regenBanner||!regenInfo)return;
+  if(A.vocab.length>0){
+    regenBanner.style.display='block';
+    const preview=getVocabToInject(8);
+    const neverGen=preview.filter(v=>!v.generatedCount).length;
+    const fromBooks=[...new Set(preview.map(v=>v.examples?.[0]?.bookId).filter(Boolean))].length;
+    regenInfo.textContent=`将使用${preview.length}个词（来自${fromBooks||1}篇文章，${neverGen}个从未出现过）`;
+  } else {
+    regenBanner.style.display='none';
+  }
+}
+
+// ════════════════════════════════════
+// REVIEW EVENTS
+// ════════════════════════════════════
+document.getElementById('review-close').addEventListener('click',()=>{
+  document.getElementById('review-screen').style.display='none';
+  updateVocabBanner();
+});
+document.getElementById('review-done-close').addEventListener('click',()=>{
+  document.getElementById('review-screen').style.display='none';
+  updateVocabBanner();
+});
+document.getElementById('ri-next').addEventListener('click',()=>{
+  // 初识卡看完后进入填空
+  const v=reviewQueue[reviewIdx];
+  if(v){answerSRS(v.id,false);} // 不算对，只是看过
+  showQuizCard(reviewQueue[reviewIdx]||reviewQueue[0]);
+});
+document.getElementById('rq-submit').addEventListener('click',checkAnswer);
+document.getElementById('vocab-inject-toggle').addEventListener('change',updateVocabInjectPreview);
+document.getElementById('rqc-submit').addEventListener('click',submitCompose);
+document.getElementById('rqc-next').addEventListener('click',()=>advanceReview(true));
+document.getElementById('rqc-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.ctrlKey)submitCompose();
+});
+document.getElementById('rq-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter')checkAnswer();
+});
+document.getElementById('rq-wrong').addEventListener('click',()=>advanceReview(false));
+// rq-correct removed (replaced by compose flow)
+document.getElementById('srs-banner').addEventListener('click',startReview);
+// regen-banner event moved to openRegenModal section
+
+// ════════════════════════════════════
+// 再生成弹窗
+// ════════════════════════════════════
+// renderTagListInEl和renderRegenModalTags已合并入renderTags
+
+function openRegenModal(){
+  const modal=document.getElementById('regen-modal');
+  modal.style.display='flex';
+
+  // 填入词库生词预览
+  const words=getVocabToInject(8);
+  const wordsEl=document.getElementById('regen-modal-words');
+  const infoEl=document.getElementById('regen-modal-word-info');
+  wordsEl.innerHTML=words.map(v=>`<span style="background:var(--surface3);border:1px solid var(--bdr2);border-radius:12px;padding:3px 10px;font-size:12px;color:var(--ink2);font-family:'Noto Serif JP',serif">${escH(v.word)}</span>`).join('');
+  const neverGen=words.filter(v=>!v.generatedCount).length;
+  const fromBooks=[...new Set(words.map(v=>v.examples?.[0]?.bookId).filter(Boolean))].length;
+  infoEl.textContent=`${words.length}个词，来自${fromBooks}篇文章，${neverGen}个从未出现过`;
+
+  // 渲染标签（共享state）
+  renderTags();
+
+  // 填入特殊指令
+  const rmSpecial=document.getElementById('rm-special-inst');
+  if(rmSpecial)rmSpecial.value=A.cfg.specialInst||'';
+}
+
+// 弹窗里的标签添加
+['rm-add-content-tag','rm-add-style-tag','rm-add-learn-tag'].forEach(btnId=>{
+  document.getElementById(btnId)?.addEventListener('click',()=>{
+    const map={'rm-add-content-tag':['rm-new-content-tag',A.contentTags],
+               'rm-add-style-tag':['rm-new-style-tag',A.styleTags],
+               'rm-add-learn-tag':['rm-new-learn-tag',A.learnTags]};
+    const [inputId,arr]=map[btnId];
+    const v=document.getElementById(inputId)?.value.trim();
+    if(!v)return;
+    if(!arr.includes(v))arr.push(v);
+    document.getElementById(inputId).value='';
+    sv();renderTags();renderTags();
+  });
+});
+['rm-new-content-tag','rm-new-style-tag','rm-new-learn-tag'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      const map={'rm-new-content-tag':'rm-add-content-tag',
+                 'rm-new-style-tag':'rm-add-style-tag',
+                 'rm-new-learn-tag':'rm-add-learn-tag'};
+      document.getElementById(map[id])?.click();
+    }
+  });
+});
+
+document.getElementById('regen-modal-close').addEventListener('click',()=>{
+  document.getElementById('regen-modal').style.display='none';
+});
+document.getElementById('regen-modal').addEventListener('click',e=>{
+  if(e.target===e.currentTarget)e.currentTarget.style.display='none';
+});
+
+document.getElementById('regen-modal-gen').addEventListener('click',async()=>{
+  // 关闭弹窗，跳到探索页，开启词库注入，生成梗概
+  document.getElementById('regen-modal').style.display='none';
+
+  // 同步特殊指令
+  const rmSpecial=document.getElementById('rm-special-inst')?.value.trim();
+  if(rmSpecial!==undefined)A.cfg.specialInst=rmSpecial;
+  sv();
+
+  // 开启词库注入
+  const toggle=document.getElementById('vocab-inject-toggle');
+  if(toggle){toggle.checked=true;}
+  const panel=document.getElementById('vocab-inject-panel');
+  if(panel){panel.style.display='flex';}
+  updateVocabInjectPreview();
+
+  // 切到探索页触发生成
+  showTab('search');
+  await new Promise(r=>setTimeout(r,100));
+  generateOutlines(true); // forceNew=true，强制生成新梗概
+});
+
+// 词库再生成banner点击 → 打开弹窗
+document.getElementById('regen-banner').addEventListener('click',openRegenModal);
+
+document.getElementById('err-close').addEventListener('click',()=>{document.getElementById('err-modal').style.display='none';});
+document.getElementById('err-copy').addEventListener('click',()=>{
+  navigator.clipboard.writeText(document.getElementById('err-msg').textContent).then(()=>toast('已复制'));
+});
+document.getElementById('err-modal').addEventListener('click',e=>{
+  if(e.target===e.currentTarget)e.currentTarget.style.display='none';
+});
+
+// ════════════════════════════════════
+// INIT
+// ════════════════════════════════════
+// 诊断：打印localStorage状态
+try{
+  const raw=localStorage.getItem('yuya_v1');
+  console.log('[yuya] localStorage size:', raw?raw.length:'empty');
+  if(raw){const d=JSON.parse(raw);console.log('[yuya] data keys:',Object.keys(d),'vocab:',d.vocab?.length,'books:',d.books?.length);}
+}catch(e){console.warn('[yuya] localStorage error:',e);}
+
+ld();
+if(!A.contentTags.length)A.contentTags=[...DEFAULT_CONTENT_TAGS];
+if(!A.styleTags.length)A.styleTags=[...DEFAULT_STYLE_TAGS];
+if(!A.learnTags.length)A.learnTags=[...DEFAULT_LEARN_TAGS];
+setTheme(A.theme);
+renderTags();
+renderHistoryList();
+showScr('search');
+showTab('search');
+updateVocabBanner();
+</script>
+</body>
+</html>
