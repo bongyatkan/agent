@@ -287,6 +287,13 @@ body{font-family:'Noto Serif SC','Noto Serif JP',serif;transition:background .3s
       <!-- 已选标签搜索框 -->
       <div id="selected-tags-bar" style="display:none;flex-wrap:wrap;gap:6px;padding:10px 12px;background:var(--surface2);border:1px solid var(--acc);border-radius:10px;margin-bottom:10px;min-height:36px;align-items:center"></div>
 
+      <!-- 标签库切换 + 自定义标签 -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="font-size:11px;color:var(--ink3)">標籤庫</div>
+        <button id="lang-btn-jp" class="tbtn" style="font-size:12px;padding:3px 10px">🇯🇵 日文</button>
+        <button id="lang-btn-cn" class="tbtn" style="font-size:12px;padding:3px 10px">🇨🇳 中文</button>
+      </div>
+
       <!-- 自定义标签（最上面） -->
       <div id="custom-tags-section" style="display:none" class="tag-section">
         <div class="tag-section-title">我的標籤</div>
@@ -681,29 +688,63 @@ body{font-family:'Noto Serif SC','Noto Serif JP',serif;transition:background .3s
 const SK='yuya_v1';
 
 // 内容タグ：グループ構造
-const TAG_GROUPS_CONTENT=[
-  {label:'日常・場面', tags:['日常','コンビニ','喫茶店','雨の日','深夜','料理','銭湯','公園','駅のホーム','通勤']},
-  {label:'季節・天気', tags:['冬','夏','梅雨','花見','初雪','台風の夜']},
-  {label:'仕事・社会', tags:['出張','残業','締め切り前夜','社内恋愛','転職','仕事帰り']},
-  {label:'関係性イベント', tags:['喧嘩と仲直り','すれ違い','再会','告白','初デート','初キス','プロポーズ','別れ','復縁']},
-  {label:'特殊状況', tags:['同居','終電逃し','停電','閉じ込められる','看病','秘密がばれる','嘘がばれる']},
-  {label:'関係性・感情', tags:['片思い','両思い','幼馴染','年の差','ライバル','元カレ元カノ','友人以上恋人未満','嫉妬','独占欲','依存','焦れったい','距離感','言えない気持ち','後悔']},
-  {label:'世界観パロ', tags:['現パロ','学パロ','ファンタジーパロ','転生パロ','大正パロ','江戸パロ','SF設定','和風ファンタジー','近未来']},
-  {label:'職業パロ', tags:['探偵パロ','刑事パロ','スパイパロ','マフィアパロ','医者パロ','カフェパロ','花屋パロ','書店パロ','アイドルパロ','作家パロ','弁護士パロ']},
-  {label:'関係性パロ', tags:['お見合いパロ','新婚パロ','主従パロ','幼馴染パロ','隣人パロ','義兄妹パロ']},
-  {label:'特殊設定', tags:['オメガバース','番い','運命の相手','魔法使い','異能力','記憶喪失','タイムリープ','死に戻り','夢の中','鏡写し','入れ替わり']},
+// ══════════════════════════════════
+// 日文标签库（pixiv风格）
+// ══════════════════════════════════
+const TAG_GROUPS_JP_CONTENT=[
+  {label:'日常・場面', tags:['日常','コンビニ','喫茶店','ファミレス','居酒屋','雨の日','深夜','料理','銭湯','公園','駅のホーム','通勤','図書館','本屋','病院']},
+  {label:'季節・天気', tags:['冬','夏','梅雨','花見','初雪','台風の夜','秋の夜','春の朝','夕暮れ','朝靄']},
+  {label:'仕事・社会', tags:['出張','残業','締め切り前夜','社内恋愛','転職','仕事帰り','同僚','上司と部下','バイト']},
+  {label:'関係性イベント', tags:['喧嘩と仲直り','すれ違い','再会','告白','初デート','初キス','プロポーズ','別れ','復縁','初めての夜','結婚','同棲','告白失敗']},
+  {label:'特殊状況', tags:['同居','終電逃し','停電','閉じ込められる','看病','秘密がばれる','嘘がばれる','雨宿り','迷子','酔っ払い']},
+  {label:'感情・関係性', tags:['片思い','両思い','両片思い','幼馴染','年の差','ライバル','元カノ元カレ','友人以上恋人未満','嫉妬','独占欲','依存','焦れったい','距離感','言えない気持ち','後悔','執着','溺愛','束縛']},
+  {label:'世界観設定', tags:['現パロ','学パロ','社会人パロ','大正パロ','江戸パロ','ファンタジー','SF','近未来','和風ファンタジー','異世界','転生','サイバーパンク']},
+  {label:'職業設定', tags:['探偵','刑事','スパイ','マフィア','医者','カフェ店員','花屋','書店員','アイドル','作家','弁護士','料理人']},
+  {label:'関係性設定', tags:['お見合い','新婚','主従','幼馴染','隣人','義兄妹','契約結婚','偽恋人','先輩後輩','師弟']},
+  {label:'特殊設定', tags:['オメガバース','番い','運命の番','魔法使い','異能力','記憶喪失','タイムリープ','死に戻り','夢の中','入れ替わり','ABO','発情期','フェロモン']},
+  {label:'情節・展開', tags:['初めて尽くし','不意打ちキス','壁ドン','カラオケ','お泊まり','手料理','風邪','酔っ払い告白','夢オチなし','雨に濡れる','傘シェア']},
 ];
-const DEFAULT_CONTENT_TAGS=TAG_GROUPS_CONTENT.flatMap(g=>g.tags);
+const TAG_GROUPS_JP_STYLE=[
+  {label:'感情トーン', tags:['もどかしい','甘々','切ない','胸が痛い','ほっこり','苦しい','ドキドキ','温かい','重い','ビター','エモい','泣ける']},
+  {label:'展開・構成', tags:['スローバーン','急展開','伏線あり','どんでん返し','余韻','ループ','王道','捻り']},
+  {label:'結末', tags:['ハッピーエンド','バッドエンド','オープンエンド','ハッピーエンド保証','後日談あり']},
+  {label:'視点・形式', tags:['一人称','三人称','視点変え','手紙形式','回想録','日記形式','短編','連作']},
+  {label:'文体', tags:['心理描写多め','会話中心','詩的','散文的','情緒的','淡々と','言葉少な','感覚的']},
+  {label:'pixiv定番タグ', tags:['砂糖吐く','胸キュン','尊い','恋愛下手','不器用','こじらせ','ほのぼの','甘い','ご馳走様でした','読後感良い','何度も読み返す']},
+  {label:'成熟向け', tags:['R18','R18G','成人向け','NSFW','官能的','18禁']},
+];
 
-// 風格タグ：グループ構造
-const TAG_GROUPS_STYLE=[
-  {label:'感情トーン', tags:['もどかしい','甘々','切ない','胸が痛い','ほっこり','苦しい','ドキドキ','温かい','重い','ビター']},
-  {label:'展開・構成', tags:['スローバーン','ハッピーエンド','バッドエンド','急展開','伏線あり','どんでん返し','余韻','ループ']},
-  {label:'視点・形式', tags:['一人称','三人称','視点変え','手紙形式','回想録','独り言','日記形式','短編']},
-  {label:'文体', tags:['心理描写多め','会話中心','詩的','散文的','情緒的','淡々と','言葉少な']},
-  {label:'pixiv定番感情タグ', tags:['砂糖吐く','胸キュン','尊い','両片思い','恋愛下手','不器用','こじらせ','ほのぼの','甘い']},
+// ══════════════════════════════════
+// 中文标签库（网文/同人真实标签）
+// ══════════════════════════════════
+const TAG_GROUPS_CN_CONTENT=[
+  {label:'关系模式', tags:['合约情人','先婚后爱','日久生情','一见钟情','双向暗恋','破镜重圆','相爱相杀','死对头变情人','追妻火葬场','修罗场','恨海情天','强取豪夺','青梅竹马','换乘恋爱','白月光','替身','养成','金主/包养','人妻','主仆']},
+  {label:'剧情情节', tags:['带球跑','失忆','性转','灵魂互换','NTR','强制爱','骨科','兄弟(伪)','师徒','年上','年下']},
+  {label:'人物属性', tags:['万人迷','弱攻强受','帝王受','大叔受','诱受/诱攻','清冷','傲娇','病娇','腹黑','女王','忠犬','强强']},
+  {label:'人外种族', tags:['天使','恶魔','精灵','龙族','人鱼','吸血鬼','兽人','人外','触手','双性']},
+  {label:'世界观', tags:['古风','民国','九十年代','武侠','修真','宫廷侯爵','欧风','西幻','星际','ABO','哨向','赛博朋克','蒸汽朋克','废土','末世','无限流','克苏鲁','灵异神怪','悬疑刑侦','电竞','全息网游','娱乐圈','校园AU','现代AU','架空世界(AU)','赛博修真']},
+  {label:'特殊设定', tags:['Dom/Sub','生子','产乳','机械飞升','原作向','一锅炖']},
 ];
-const DEFAULT_STYLE_TAGS=TAG_GROUPS_STYLE.flatMap(g=>g.tags);
+const TAG_GROUPS_CN_STYLE=[
+  {label:'CP向', tags:['BL','BG','GL','GB','互攻','多P','无CP']},
+  {label:'情感基调', tags:['甜文','虐文','爽文','治愈系','暗黑向','正剧向','轻松','爆笑','酸甜','慢热']},
+  {label:'结局', tags:['喜剧(HE)','悲剧(BE)','开放式(OE)']},
+  {label:'叙事形式', tags:['聊天体','论坛体','直播体','日记体','知乎体','剧本格式','新闻体','邮件体','规则怪谈','阅读体']},
+];
+
+// 当前激活的标签库（jp或cn）
+// 根据A.tagLang动态切换
+function getActiveTagGroups(type){
+  const lang=A.tagLang||'jp';
+  if(type==='content') return lang==='cn'?TAG_GROUPS_CN_CONTENT:TAG_GROUPS_JP_CONTENT;
+  if(type==='style') return lang==='cn'?TAG_GROUPS_CN_STYLE:TAG_GROUPS_JP_STYLE;
+  return [];
+}
+
+const TAG_GROUPS_CONTENT=TAG_GROUPS_JP_CONTENT; // 向后兼容
+const DEFAULT_CONTENT_TAGS=TAG_GROUPS_JP_CONTENT.flatMap(g=>g.tags);
+const TAG_GROUPS_STYLE=TAG_GROUPS_JP_STYLE;
+const DEFAULT_STYLE_TAGS=TAG_GROUPS_JP_STYLE.flatMap(g=>g.tags);
 
 const DEFAULT_LEARN_TAGS=['外来語多め','ビジネス語','敬語・丁寧語','複合動詞','N2語彙','N1語彙','大阪弁','若者言葉','感情語彙','身体表現','慣用句','擬音語・擬態語','季語'];
 
@@ -711,6 +752,7 @@ let A={
   theme:'dark',
   presets:[],activeP:null,model:'',
   cfg:{charName:'',charCard:'',jpLevel:'natural',chCount:'3',specialInst:'',sysPrompt:''},
+  tagLang:'jp',    // 标签库语言：jp或cn
   customTags:[],   // 用户自定义标签库
   selCustomTags:[], // 当前选中的自定义标签
   characters:[],  // [{id,name,card}]
@@ -743,7 +785,7 @@ function ld(){
   if(!r)return;
   try{
     const d=JSON.parse(r);
-    ['theme','presets','activeP','model','cfg','books','vocab','searchHistory','chatCache','characters','activeChars','worlds','activeWorld','customTags','selCustomTags'].forEach(k=>{if(d[k]!==undefined)A[k]=d[k];});
+    ['theme','presets','activeP','model','cfg','books','vocab','searchHistory','chatCache','characters','activeChars','worlds','activeWorld','customTags','selCustomTags','tagLang'].forEach(k=>{if(d[k]!==undefined)A[k]=d[k];});
     // 标签：从存档里取用户自定义标签（不在DEFAULT里的），和DEFAULT合并
     const mergeCustomTags=(saved, defaults)=>{
       const custom=(saved||[]).filter(t=>!defaults.includes(t));
@@ -867,16 +909,27 @@ async function streamToElement(res,el,onDone){
 // TAG UI
 // ════════════════════════════════════
 function renderTags(){
+  // 更新切换按钮样式
+  const jpBtn=document.getElementById('lang-btn-jp');
+  const cnBtn=document.getElementById('lang-btn-cn');
+  if(jpBtn&&cnBtn){
+    jpBtn.style.background=A.tagLang==='jp'?'var(--acc)':'';
+    jpBtn.style.color=A.tagLang==='jp'?'#fff':'';
+    cnBtn.style.background=A.tagLang==='cn'?'var(--acc)':'';
+    cnBtn.style.color=A.tagLang==='cn'?'#fff':'';
+  }
   // 已选标签栏
   renderSelectedBar();
-  // 我的标签区（自定义，最上面）
+  // 我的标签区（自定义，最上面，两个库都显示）
   renderMyCustomTags();
-  // 内容/风格/学习标签
-  renderTagList('content-tags', A.contentTags, A.selContentTags, 'content');
-  renderTagList('style-tags', A.styleTags, A.selStyleTags, 'style');
+  // 内容/风格/学习标签（根据tagLang动态切换）
+  const activeContentGroups=getActiveTagGroups('content');
+  const activeStyleGroups=getActiveTagGroups('style');
+  renderTagList('content-tags', null, A.selContentTags, 'content', activeContentGroups);
+  renderTagList('style-tags', null, A.selStyleTags, 'style', activeStyleGroups);
   renderTagList('learn-tags', A.learnTags, A.selLearnTags, 'learn');
-  renderTagList('rm-content-tags', A.contentTags, A.selContentTags, 'content');
-  renderTagList('rm-style-tags', A.styleTags, A.selStyleTags, 'style');
+  renderTagList('rm-content-tags', null, A.selContentTags, 'content', activeContentGroups);
+  renderTagList('rm-style-tags', null, A.selStyleTags, 'style', activeStyleGroups);
   renderTagList('rm-learn-tags', A.learnTags, A.selLearnTags, 'learn');
 }
 
@@ -941,17 +994,18 @@ const DEFAULT_CONTENT = [...DEFAULT_CONTENT_TAGS];
 const DEFAULT_STYLE = [...DEFAULT_STYLE_TAGS];
 const DEFAULT_LEARN = [...DEFAULT_LEARN_TAGS];
 
-function renderTagList(elId, tags, sel, type){
+function renderTagList(elId, tags, sel, type, activeGroups=null){
   const el=document.getElementById(elId);
   if(!el)return;
   el.innerHTML='';
 
-  // 判断是否有分组结构
+  // 判断是否有分组结构（优先用传入的activeGroups）
   const groupMap={'content':TAG_GROUPS_CONTENT,'style':TAG_GROUPS_STYLE};
-  const groups=groupMap[type];
+  const groups=activeGroups||(groupMap[type]);
   // 获取用户自定义标签（不在任何group里的）
-  const allGroupTags=groups?groups.flatMap(g=>g.tags):tags;
-  const customTags=tags.filter(t=>!allGroupTags.includes(t));
+  const effectiveTags=tags||(groups?groups.flatMap(g=>g.tags):[]);
+  const allGroupTags=groups?groups.flatMap(g=>g.tags):effectiveTags;
+  const customTags=effectiveTags.filter(t=>!allGroupTags.includes(t));
 
   if(groups){
     // 分组渲染：每组一个小标题
@@ -991,9 +1045,9 @@ function renderTagList(elId, tags, sel, type){
     // 无分组：原来的折叠逻辑
     const expanded=el.dataset.expanded==='1';
     const SHOW=8;
-    const visible=expanded?tags:tags.filter((t,idx)=>sel.includes(t)||idx<SHOW);
+    const visible=expanded?effectiveTags:effectiveTags.filter((t,idx)=>sel.includes(t)||idx<SHOW);
     visible.forEach(t=>renderSingleTag(el,t,sel,type));
-    const hasMore=tags.length>SHOW&&!expanded;
+    const hasMore=effectiveTags.length>SHOW&&!expanded;
     if(hasMore){
       const btn=document.createElement('div');
       btn.className='tag';
@@ -2613,7 +2667,7 @@ function renderWorldList(){
         <div style="font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(w.card.substring(0,60))}…</div>
       </div>
       <button style="background:none;border:none;font-size:16px;color:var(--ink3);cursor:pointer;padding:2px 4px" data-del="${w.id}">🗑</button>
-    \`;
+    `;
     div.addEventListener('click',e=>{
       if(e.target.dataset.toggle){
         A.activeWorld=A.activeWorld===e.target.dataset.toggle?'':e.target.dataset.toggle;
@@ -2663,23 +2717,23 @@ document.getElementById('close-cfg').addEventListener('click',()=>closeFP('cfg-p
 
 document.querySelectorAll('[data-tab]').forEach(t=>{t.addEventListener('click',()=>showTab(t.dataset.tab));});
 
-document.getElementById('add-content-tag').addEventListener('click',()=>{
-  const v=document.getElementById('new-content-tag').value.trim();
+document.getElementById('add-content-tag')?.addEventListener('click',()=>{
+  const v=document.getElementById('new-content-tag')?.value.trim();
   if(!v)return;if(!A.contentTags.includes(v))A.contentTags.push(v);
   document.getElementById('new-content-tag').value='';sv();renderTags();
 });
-document.getElementById('add-style-tag').addEventListener('click',()=>{
-  const v=document.getElementById('new-style-tag').value.trim();
+document.getElementById('add-style-tag')?.addEventListener('click',()=>{
+  const v=document.getElementById('new-style-tag')?.value.trim();
   if(!v)return;if(!A.styleTags.includes(v))A.styleTags.push(v);
   document.getElementById('new-style-tag').value='';sv();renderTags();
 });
-document.getElementById('add-learn-tag').addEventListener('click',()=>{
-  const v=document.getElementById('new-learn-tag').value.trim();
+document.getElementById('add-learn-tag')?.addEventListener('click',()=>{
+  const v=document.getElementById('new-learn-tag')?.value.trim();
   if(!v)return;if(!A.learnTags.includes(v))A.learnTags.push(v);
   document.getElementById('new-learn-tag').value='';sv();renderTags();
 });
 ['new-content-tag','new-style-tag','new-learn-tag'].forEach(id=>{
-  document.getElementById(id).addEventListener('keydown',e=>{
+  document.getElementById(id)?.addEventListener('keydown',e=>{
     if(e.key==='Enter'){
       const map={'new-content-tag':'add-content-tag','new-style-tag':'add-style-tag','new-learn-tag':'add-learn-tag'};
       document.getElementById(map[id]).click();
@@ -2850,6 +2904,20 @@ document.getElementById('save-cfg').addEventListener('click',()=>{
 });
 
 // 保存角色按钮
+// 标签库语言切换
+document.getElementById('lang-btn-jp')?.addEventListener('click',()=>{
+  A.tagLang='jp';
+  A.selContentTags=A.selContentTags.filter(t=>TAG_GROUPS_JP_CONTENT.flatMap(g=>g.tags).includes(t)||A.customTags.includes(t));
+  A.selStyleTags=A.selStyleTags.filter(t=>TAG_GROUPS_JP_STYLE.flatMap(g=>g.tags).includes(t)||A.customTags.includes(t));
+  sv();renderTags();
+});
+document.getElementById('lang-btn-cn')?.addEventListener('click',()=>{
+  A.tagLang='cn';
+  A.selContentTags=A.selContentTags.filter(t=>TAG_GROUPS_CN_CONTENT.flatMap(g=>g.tags).includes(t)||A.customTags.includes(t));
+  A.selStyleTags=A.selStyleTags.filter(t=>TAG_GROUPS_CN_STYLE.flatMap(g=>g.tags).includes(t)||A.customTags.includes(t));
+  sv();renderTags();
+});
+
 // 自定义标签库
 function addCfgCustomTag(){
   const input=document.getElementById('cfg-new-custom-tag');
