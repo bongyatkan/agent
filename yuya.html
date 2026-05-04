@@ -294,7 +294,13 @@ body{font-family:'Noto Serif SC','Noto Serif JP',serif;transition:background .3s
         <button id="lang-btn-cn" class="tbtn" style="font-size:12px;padding:3px 10px">🇨🇳 中文</button>
       </div>
 
-      <!-- 自定义标签（最上面） -->
+      <!-- 角色标签区（最上面） -->
+      <div id="char-tags-section" style="display:none" class="tag-section">
+        <div class="tag-section-title">角色</div>
+        <div class="tag-row" id="char-tags-row"></div>
+      </div>
+
+      <!-- 自定义标签 -->
       <div id="custom-tags-section" style="display:none" class="tag-section">
         <div class="tag-section-title">我的標籤</div>
         <div class="tag-row" id="my-custom-tags"></div>
@@ -470,9 +476,9 @@ body{font-family:'Noto Serif SC','Noto Serif JP',serif;transition:background .3s
         <div style="font-size:12px;color:var(--acc2);margin-bottom:2px">添加 / 编辑角色</div>
         <div class="sr"><label>角色名字</label><input type="text" id="new-char-name" placeholder="例：角色名"></div>
         <div class="sr"><label>角色卡</label><textarea id="new-char-card" rows="5" placeholder="粘贴角色卡内容…" style="border:1px solid var(--bdr);border-radius:8px;padding:10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink);outline:none;width:100%;resize:vertical;min-height:100px;line-height:1.6"></textarea></div>
-        <div style="display:flex;flex-direction:row;gap:8px">
-          <button class="sbtn" id="save-char-btn" style="flex:1;padding:9px">保存角色</button>
-          <button class="s2btn" id="clear-char-btn" style="padding:9px 14px;flex-shrink:0">清空</button>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
+          <button class="sbtn" id="save-char-btn" style="padding:9px">保存角色</button>
+          <button class="s2btn" id="clear-char-btn" style="padding:9px 14px">清空</button>
         </div>
         <input type="hidden" id="editing-char-id">
       </div>
@@ -486,9 +492,9 @@ body{font-family:'Noto Serif SC','Noto Serif JP',serif;transition:background .3s
         <div style="font-size:12px;color:var(--acc2);margin-bottom:2px">添加 / 编辑世界观</div>
         <div class="sr"><label>世界名称</label><input type="text" id="new-world-name" placeholder="例：架空都市、现代日本…"></div>
         <div class="sr"><label>世界观设定</label><textarea id="new-world-card" rows="5" placeholder="粘贴世界观内容…" style="border:1px solid var(--bdr);border-radius:8px;padding:10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink);outline:none;width:100%;resize:vertical;min-height:100px;line-height:1.6"></textarea></div>
-        <div style="display:flex;flex-direction:row;gap:8px">
-          <button class="sbtn" id="save-world-btn" style="flex:1;padding:9px">保存世界观</button>
-          <button class="s2btn" id="clear-world-btn" style="padding:9px 14px;flex-shrink:0">清空</button>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
+          <button class="sbtn" id="save-world-btn" style="padding:9px">保存世界观</button>
+          <button class="s2btn" id="clear-world-btn" style="padding:9px 14px">清空</button>
         </div>
         <input type="hidden" id="editing-world-id">
       </div>
@@ -753,6 +759,7 @@ let A={
   presets:[],activeP:null,model:'',
   cfg:{charName:'',charCard:'',jpLevel:'natural',chCount:'3',specialInst:'',sysPrompt:''},
   tagLang:'jp',    // 标签库语言：jp或cn
+  selCharTags:[],  // 选中的角色名标签
   customTags:[],   // 用户自定义标签库
   selCustomTags:[], // 当前选中的自定义标签
   characters:[],  // [{id,name,card}]
@@ -785,7 +792,7 @@ function ld(){
   if(!r)return;
   try{
     const d=JSON.parse(r);
-    ['theme','presets','activeP','model','cfg','books','vocab','searchHistory','chatCache','characters','activeChars','worlds','activeWorld','customTags','selCustomTags','tagLang'].forEach(k=>{if(d[k]!==undefined)A[k]=d[k];});
+    ['theme','presets','activeP','model','cfg','books','vocab','searchHistory','chatCache','characters','activeChars','worlds','activeWorld','selCharTags','customTags','selCustomTags','tagLang'].forEach(k=>{if(d[k]!==undefined)A[k]=d[k];});
     // 标签：从存档里取用户自定义标签（不在DEFAULT里的），和DEFAULT合并
     const mergeCustomTags=(saved, defaults)=>{
       const custom=(saved||[]).filter(t=>!defaults.includes(t));
@@ -921,6 +928,7 @@ function renderTags(){
   // 已选标签栏
   renderSelectedBar();
   // 我的标签区（自定义，最上面，两个库都显示）
+  renderCharTags();
   renderMyCustomTags();
   // 内容/风格/学习标签（根据tagLang动态切换）
   const activeContentGroups=getActiveTagGroups('content');
@@ -936,7 +944,7 @@ function renderTags(){
 function renderSelectedBar(){
   const bar=document.getElementById('selected-tags-bar');
   if(!bar)return;
-  const all=[...A.selCustomTags,...A.selContentTags,...A.selStyleTags,...A.selLearnTags];
+  const all=[...A.selCharTags,...A.selCustomTags,...A.selContentTags,...A.selStyleTags,...A.selLearnTags];
   if(!all.length){bar.style.display='none';return;}
   bar.style.display='flex';
   bar.innerHTML='<span style="font-size:11px;color:var(--ink3);margin-right:4px;flex-shrink:0">✦</span>'+
@@ -945,11 +953,31 @@ function renderSelectedBar(){
     el.addEventListener('click',()=>{
       const t=el.dataset.tag;
       // 从所有选中数组里移除
-      [A.selCustomTags,A.selContentTags,A.selStyleTags,A.selLearnTags].forEach(arr=>{
+      [A.selCharTags,A.selCustomTags,A.selContentTags,A.selStyleTags,A.selLearnTags].forEach(arr=>{
         const i=arr.indexOf(t);if(i>=0)arr.splice(i,1);
       });
       renderTags();
     });
+  });
+}
+
+function renderCharTags(){
+  const sec=document.getElementById('char-tags-section');
+  const el=document.getElementById('char-tags-row');
+  if(!el||!sec)return;
+  if(!A.characters.length){sec.style.display='none';return;}
+  sec.style.display='';
+  el.innerHTML='';
+  A.characters.forEach(c=>{
+    const div=document.createElement('div');
+    div.className='tag'+(A.selCharTags.includes(c.name)?' on':'');
+    div.textContent=c.name;
+    div.addEventListener('click',()=>{
+      const i=A.selCharTags.indexOf(c.name);
+      if(i>=0)A.selCharTags.splice(i,1);else A.selCharTags.push(c.name);
+      renderTags();
+    });
+    el.appendChild(div);
   });
 }
 
@@ -1267,7 +1295,8 @@ STATS:hits数字/kudos数字/bookmarks数字/comments数字/chapters数字/endin
 ===END===
     `;
 
-  const userMsg=`Keywords: ${contentSel}${styleSel?' '+styleSel:''}${injectWords.length?' '+injectWords.map(v=>v.word).join(' '):''}`;
+  const charSel=A.selCharTags.join(' ');
+  const userMsg=`Keywords: ${charSel?charSel+' ':''}${contentSel}${styleSel?' '+styleSel:''}${injectWords.length?' '+injectWords.map(v=>v.word).join(' '):''}`;
 
   try{
     const rawText=await callAPIStream([
