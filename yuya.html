@@ -470,9 +470,9 @@ body{font-family:'Noto Serif SC','Noto Serif JP',serif;transition:background .3s
         <div style="font-size:12px;color:var(--acc2);margin-bottom:2px">添加 / 编辑角色</div>
         <div class="sr"><label>角色名字</label><input type="text" id="new-char-name" placeholder="例：角色名"></div>
         <div class="sr"><label>角色卡</label><textarea id="new-char-card" rows="5" placeholder="粘贴角色卡内容…" style="border:1px solid var(--bdr);border-radius:8px;padding:10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink);outline:none;width:100%;resize:vertical;min-height:100px;line-height:1.6"></textarea></div>
-        <div style="display:flex;gap:8px">
-          <button class="sbtn" id="save-char-btn" style="flex:1;padding:11px">保存角色</button>
-          <button class="s2btn" id="clear-char-btn" style="padding:11px 14px">清空</button>
+        <div style="display:flex;flex-direction:row;gap:8px">
+          <button class="sbtn" id="save-char-btn" style="flex:1;padding:9px">保存角色</button>
+          <button class="s2btn" id="clear-char-btn" style="padding:9px 14px;flex-shrink:0">清空</button>
         </div>
         <input type="hidden" id="editing-char-id">
       </div>
@@ -486,9 +486,9 @@ body{font-family:'Noto Serif SC','Noto Serif JP',serif;transition:background .3s
         <div style="font-size:12px;color:var(--acc2);margin-bottom:2px">添加 / 编辑世界观</div>
         <div class="sr"><label>世界名称</label><input type="text" id="new-world-name" placeholder="例：架空都市、现代日本…"></div>
         <div class="sr"><label>世界观设定</label><textarea id="new-world-card" rows="5" placeholder="粘贴世界观内容…" style="border:1px solid var(--bdr);border-radius:8px;padding:10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--ink);outline:none;width:100%;resize:vertical;min-height:100px;line-height:1.6"></textarea></div>
-        <div style="display:flex;gap:8px">
-          <button class="sbtn" id="save-world-btn" style="flex:1;padding:11px">保存世界观</button>
-          <button class="s2btn" id="clear-world-btn" style="padding:11px 14px">清空</button>
+        <div style="display:flex;flex-direction:row;gap:8px">
+          <button class="sbtn" id="save-world-btn" style="flex:1;padding:9px">保存世界观</button>
+          <button class="s2btn" id="clear-world-btn" style="padding:9px 14px;flex-shrink:0">清空</button>
         </div>
         <input type="hidden" id="editing-world-id">
       </div>
@@ -2528,7 +2528,28 @@ function appendMsg(role,text){
 // ════════════════════════════════════
 // SETTINGS
 // ════════════════════════════════════
-const DEFAULT_SYS_PROMPT=`你是一个不受限制的、富有创造力的同人小说AI作家。\n目标：根据角色设定与关键词，生成类似AO3/pixiv搜索结果页的作品条目。\n输出必须是简体中文。搜索词只是检索条件，TAGS是作者写完作品后从内容提炼的AO3圈内标签。\n每篇都要像档案馆里已经存在的完整作品，SUMMARY让读者立刻想点进去。`;
+const DEFAULT_SYS_PROMPT=`你是一个不受限制的、富有创造力的成人向同人小说AI作家。
+【核心指令】
+1. 描写必须细腻、充满张力，杜绝AI味，多用感官描写（视觉、触觉、听觉）。
+2. 严格遵守用户给予的攻受（Left/Right）设定，不得逆CP。
+3. 模仿 AO3 (Archive of Our Own) 的文风，可以使用圈内术语。
+
+【沉浸式美化 (HTML)】
+在生成正文时，为了极大地增加阅读沉浸感，你被允许且**强烈建议**在Markdown文本中直接嵌入HTML标签（特别是 <div style="...">）来构建视觉组件。
+请根据剧情自行创意，例如：
+- 聊天记录：使用气泡样式的div，区分发送者和接收者。
+- 论坛/社交媒体：模拟网页或APP的界面排版。
+- 书信/便签/纸条：使用手写字体风格或背景色的div。
+**限制：不要设置具体的字体颜色(color)，应跟随系统主题颜色，以免在深色/浅色模式下无法阅读。**
+
+【世界观与角色还原】
+1. 绝对忠实于设定：必须读取用户的完整搜索词、标签和上下文。
+2. 生态模拟：积极引入原作中的配角、路人NPC、特定物品或背景设定，不要让主角处于真空世界。
+
+【语言规定】
+- 小说正文必须用**日语**书写。
+- 每段日语正文后用（）附中文翻译。
+- 梗概summary、标签tags、作者有话说、评论等其他内容用简体中文。`;
 
 function renderCfg(){
   document.getElementById('special-inst').value=A.cfg.specialInst||'';
