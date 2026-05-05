@@ -799,6 +799,7 @@ function ld(){
   if(!r)return;
   try{
     const d=JSON.parse(r);
+    const _savedTheme=d.theme; // 先记下来
     ['theme','presets','activeP','model','cfg','books','vocab','searchHistory','chatCache','characters','activeChars','worlds','activeWorld','writeLang','selCharTags','customTags','selCustomTags','tagLang'].forEach(k=>{if(d[k]!==undefined)A[k]=d[k];});
     // 标签：从存档里取用户自定义标签（不在DEFAULT里的），和DEFAULT合并
     const mergeCustomTags=(saved, defaults)=>{
@@ -958,12 +959,12 @@ function renderTags(){
   const showLearn=(A.writeLang==='jp'||A.tagLang==='jp');
   const learnSec=document.getElementById('learn-tags-section');
   if(learnSec)learnSec.style.display=showLearn?'':'none';
-  if(showLearn)renderTagList('learn-tags', A.learnTags, A.selLearnTags, 'learn');
+  if(showLearn)renderTagList('learn-tags', [...DEFAULT_LEARN_TAGS], A.selLearnTags, 'learn');
   renderTagList('rm-content-tags', null, A.selContentTags, 'content', activeContentGroups);
   renderTagList('rm-style-tags', null, A.selStyleTags, 'style', activeStyleGroups);
   const rmLearnSec=document.getElementById('rm-learn-tags-section');
   if(rmLearnSec)rmLearnSec.style.display=showLearn?'':'none';
-  if(showLearn)renderTagList('rm-learn-tags', A.learnTags, A.selLearnTags, 'learn');
+  if(showLearn)renderTagList('rm-learn-tags', [...DEFAULT_LEARN_TAGS], A.selLearnTags, 'learn');
 }
 
 function renderSelectedBar(){
@@ -2904,9 +2905,9 @@ function renderWorldList(){
 // ════════════════════════════════════
 // EVENTS
 // ════════════════════════════════════
-document.getElementById('btn-theme').addEventListener('click',()=>setTheme(A.theme==='dark'?'light':'dark'));
-document.getElementById('btn-next-chapter').addEventListener('click',genNextChapter);
-document.getElementById('btn-reroll-ch').addEventListener('click',()=>{
+document.getElementById('btn-theme')?.addEventListener('click',()=>setTheme(A.theme==='dark'?'light':'dark'));
+document.getElementById('btn-next-chapter')?.addEventListener('click',genNextChapter);
+document.getElementById('btn-reroll-ch')?.addEventListener('click',()=>{
   const book=A.books.find(b=>b.id===A.curBook);
   if(!book)return;
   const ch=book.chapters[A.curChapter];
@@ -2920,9 +2921,9 @@ document.getElementById('btn-reroll-ch').addEventListener('click',()=>{
     btn.style.opacity='1';
   });
 });
-document.getElementById('btn-theme2').addEventListener('click',()=>setTheme(A.theme==='dark'?'light':'dark'));
-document.getElementById('btn-cfg-open').addEventListener('click',()=>{renderCfg();openFP('cfg-panel');});
-document.getElementById('close-cfg').addEventListener('click',()=>closeFP('cfg-panel'));
+document.getElementById('btn-theme2')?.addEventListener('click',()=>setTheme(A.theme==='dark'?'light':'dark'));
+document.getElementById('btn-cfg-open')?.addEventListener('click',()=>{renderCfg();openFP('cfg-panel');});
+document.getElementById('close-cfg')?.addEventListener('click',()=>closeFP('cfg-panel'));
 
 document.querySelectorAll('[data-tab]').forEach(t=>{t.addEventListener('click',()=>showTab(t.dataset.tab));});
 
@@ -2950,25 +2951,25 @@ document.getElementById('add-learn-tag')?.addEventListener('click',()=>{
   });
 });
 
-document.getElementById('search-btn').addEventListener('click',()=>generateOutlines(false));
-document.getElementById('next-page-btn').addEventListener('click',()=>generateOutlines(true));
-document.getElementById('regen-btn').addEventListener('click',()=>{
+document.getElementById('search-btn')?.addEventListener('click',()=>generateOutlines(false));
+document.getElementById('next-page-btn')?.addEventListener('click',()=>generateOutlines(true));
+document.getElementById('regen-btn')?.addEventListener('click',()=>{
   // 删掉当前历史记录重新生成
   A.searchHistory=A.searchHistory.filter(h=>h.id!==A.curHistoryId);
   A.curHistoryId=null;
   generateOutlines(false);
 });
-document.getElementById('clear-history-btn').addEventListener('click',()=>{
+document.getElementById('clear-history-btn')?.addEventListener('click',()=>{
   if(!confirm('清空全部搜索历史？'))return;
   A.searchHistory=[];A.curHistoryId=null;A.searchResults=[];
   document.getElementById('results-section').style.display='none';
   document.getElementById('gen-full-btn').style.display='none';
   sv();renderHistoryList();toast('历史已清空');
 });
-document.getElementById('gen-full-btn').addEventListener('click',generateFull);
+document.getElementById('gen-full-btn')?.addEventListener('click',generateFull);
 
-document.getElementById('btn-back-reader').addEventListener('click',()=>{showScr('search');showTab('shelf');});
-document.getElementById('btn-fav').addEventListener('click',()=>{
+document.getElementById('btn-back-reader')?.addEventListener('click',()=>{showScr('search');showTab('shelf');});
+document.getElementById('btn-fav')?.addEventListener('click',()=>{
   const book=A.books.find(b=>b.id===A.curBook);
   if(!book)return;
   book.favAt=book.favAt?null:Date.now();
@@ -2976,22 +2977,22 @@ document.getElementById('btn-fav').addEventListener('click',()=>{
   toast(book.favAt?'已收藏':'已取消收藏');
 });
 
-document.getElementById('btn-chat-open').addEventListener('click',()=>{
+document.getElementById('btn-chat-open')?.addEventListener('click',()=>{
   if(!A.selTxt){toast('请先点击选中一段原文');return;}
   openChat();
 });
-document.getElementById('btn-vocab-add').addEventListener('click',()=>{
+document.getElementById('btn-vocab-add')?.addEventListener('click',()=>{
   if(!A.selEl&&!A.pendingVocabSentence){toast('请先选中一个词');return;}
   // 如果没有光标选词，清空以用selEl提取
   if(!A.pendingVocabSel)A.pendingVocabSentence='';
   openVocabAddSheet(A.pendingVocabSel||'');
 });
-document.getElementById('btn-next-chapter').addEventListener('click',genNextChapter);
+document.getElementById('btn-next-chapter')?.addEventListener('click',genNextChapter);
 
-document.getElementById('btn-theme2').addEventListener('click',()=>setTheme(A.theme==='dark'?'light':'dark'));
+document.getElementById('btn-theme2')?.addEventListener('click',()=>setTheme(A.theme==='dark'?'light':'dark'));
 
-document.getElementById('close-vocab-add').addEventListener('click',()=>closeSheet('vocab-add-sheet'));
-document.getElementById('va-requery').addEventListener('click',async()=>{
+document.getElementById('close-vocab-add')?.addEventListener('click',()=>closeSheet('vocab-add-sheet'));
+document.getElementById('va-requery')?.addEventListener('click',async()=>{
   const word=document.getElementById('va-word').value.trim();
   if(!word){toast('请先填写生词');return;}
   const rubyEl=document.getElementById('va-ruby');
@@ -3022,7 +3023,7 @@ ${exCtx}
   }catch(e){toast('查询失败：'+e.message);}
   btn.textContent='↺ 重新查询';
 });
-document.getElementById('va-save-btn').addEventListener('click',()=>{
+document.getElementById('va-save-btn')?.addEventListener('click',()=>{
   const word=document.getElementById('va-word').value.trim();
   const ruby=document.getElementById('va-ruby').value.trim();
   const cn=document.getElementById('va-cn').value.trim();
@@ -3064,13 +3065,13 @@ document.getElementById('va-save-btn').addEventListener('click',()=>{
   if(body)setTimeout(()=>{body.scrollTop=scrollPos;},50);
 });
 
-document.getElementById('close-chat').addEventListener('click',()=>closeSheet('chat-sheet'));
-document.getElementById('queue-btn').addEventListener('click',queueMsg);
-document.getElementById('send-btn').addEventListener('click',sendChat);
-document.getElementById('uinput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();queueMsg();}});
-document.getElementById('uinput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';});
+document.getElementById('close-chat')?.addEventListener('click',()=>closeSheet('chat-sheet'));
+document.getElementById('queue-btn')?.addEventListener('click',queueMsg);
+document.getElementById('send-btn')?.addEventListener('click',sendChat);
+document.getElementById('uinput')?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();queueMsg();}});
+document.getElementById('uinput')?.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';});
 
-document.getElementById('ov').addEventListener('click',()=>{
+document.getElementById('ov')?.addEventListener('click',()=>{
   document.querySelectorAll('.sheet.on').forEach(s=>s.classList.remove('on'));
   document.getElementById('ov').classList.remove('on');
 });
@@ -3082,7 +3083,7 @@ document.querySelectorAll('.vf-btn').forEach(btn=>{
   });
 });
 
-document.getElementById('add-preset').addEventListener('click',()=>{
+document.getElementById('add-preset')?.addEventListener('click',()=>{
   const name=document.getElementById('np-name').value.trim();
   const url=document.getElementById('np-url').value.trim();
   const key=document.getElementById('np-key').value.trim();
@@ -3092,14 +3093,14 @@ document.getElementById('add-preset').addEventListener('click',()=>{
   document.getElementById('np-name').value='';document.getElementById('np-url').value='';document.getElementById('np-key').value='';
   sv();renderPresets();toast('预设已添加');
 });
-document.getElementById('fetch-m').addEventListener('click',fetchModels);
-document.getElementById('m-sel').addEventListener('change',e=>{
+document.getElementById('fetch-m')?.addEventListener('click',fetchModels);
+document.getElementById('m-sel')?.addEventListener('change',e=>{
   A.model=e.target.value;
   document.getElementById('m-manual').value=e.target.value;
   sv();
 });
-document.getElementById('m-manual').addEventListener('input',e=>{A.model=e.target.value;sv();});
-document.getElementById('save-cfg').addEventListener('click',()=>{
+document.getElementById('m-manual')?.addEventListener('input',e=>{A.model=e.target.value;sv();});
+document.getElementById('save-cfg')?.addEventListener('click',()=>{
   A.cfg.jpLevel=document.getElementById('jp-level').value;
   A.cfg.specialInst=document.getElementById('special-inst').value.trim();
   A.cfg.sysPrompt=document.getElementById('sys-prompt').value.trim();
@@ -3145,11 +3146,11 @@ function addCfgCustomTag(){
   input.value='';
   sv();renderCfgCustomTags();renderTags();
 }
-document.getElementById('cfg-add-custom-tag-btn').addEventListener('click',addCfgCustomTag);
-document.getElementById('cfg-new-custom-tag').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addCfgCustomTag();}});
+document.getElementById('cfg-add-custom-tag-btn')?.addEventListener('click',addCfgCustomTag);
+document.getElementById('cfg-new-custom-tag')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addCfgCustomTag();}});
 
 // 世界观保存
-document.getElementById('save-world-btn').addEventListener('click',()=>{
+document.getElementById('save-world-btn')?.addEventListener('click',()=>{
   const name=document.getElementById('new-world-name').value.trim();
   const card=document.getElementById('new-world-card').value.trim();
   const editId=document.getElementById('editing-world-id').value;
@@ -3167,13 +3168,13 @@ document.getElementById('save-world-btn').addEventListener('click',()=>{
   document.getElementById('editing-world-id').value='';
   sv();renderWorldList();toast(editId?'世界观已更新':'世界观已添加');
 });
-document.getElementById('clear-world-btn').addEventListener('click',()=>{
+document.getElementById('clear-world-btn')?.addEventListener('click',()=>{
   document.getElementById('new-world-name').value='';
   document.getElementById('new-world-card').value='';
   document.getElementById('editing-world-id').value='';
 });
 
-document.getElementById('save-char-btn').addEventListener('click',()=>{
+document.getElementById('save-char-btn')?.addEventListener('click',()=>{
   const name=document.getElementById('new-char-name').value.trim();
   const card=document.getElementById('new-char-card').value.trim();
   const editId=document.getElementById('editing-char-id').value;
@@ -3192,17 +3193,17 @@ document.getElementById('save-char-btn').addEventListener('click',()=>{
   sv();renderCharList();toast(editId?'角色已更新':'角色已添加');
 });
 
-document.getElementById('clear-char-btn').addEventListener('click',()=>{
+document.getElementById('clear-char-btn')?.addEventListener('click',()=>{
   document.getElementById('new-char-name').value='';
   document.getElementById('new-char-card').value='';
   document.getElementById('editing-char-id').value='';
 });
-document.getElementById('exp-data').addEventListener('click',()=>{
+document.getElementById('exp-data')?.addEventListener('click',()=>{
   const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),books:A.books,vocab:A.vocab,presets:A.presets,activeP:A.activeP,model:A.model,cfg:A.cfg,contentTags:A.contentTags,styleTags:A.styleTags,learnTags:A.learnTags,searchHistory:A.searchHistory,chatCache:A.chatCache},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`yuya_${new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')}.json`;a.click();toast('数据已导出');
 });
-document.getElementById('imp-data').addEventListener('click',()=>document.getElementById('imp-file').click());
-document.getElementById('imp-file').addEventListener('change',e=>{
+document.getElementById('imp-data')?.addEventListener('click',()=>document.getElementById('imp-file').click());
+document.getElementById('imp-file')?.addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();r.onload=ev=>{
     try{
@@ -3340,23 +3341,23 @@ function showReviewDone(){
 }
 
 // 复习关闭按钮
-document.getElementById('review-close').addEventListener('click',()=>{
+document.getElementById('review-close')?.addEventListener('click',()=>{
   document.getElementById('review-screen').style.display='none';
   updateVocabBanner();
 });
-document.getElementById('review-done-close').addEventListener('click',()=>{
+document.getElementById('review-done-close')?.addEventListener('click',()=>{
   document.getElementById('review-screen').style.display='none';
   updateVocabBanner();
 });
-document.getElementById('vocab-inject-toggle').addEventListener('change',updateVocabInjectPreview);
-document.getElementById('rqc-input').addEventListener('keydown',e=>{
+document.getElementById('vocab-inject-toggle')?.addEventListener('change',updateVocabInjectPreview);
+document.getElementById('rqc-input')?.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.ctrlKey)submitCompose();
 });
-document.getElementById('rq-input').addEventListener('keydown',e=>{
+document.getElementById('rq-input')?.addEventListener('keydown',e=>{
   if(e.key==='Enter')checkAnswer();
 });
 // rq-correct removed (replaced by compose flow)
-document.getElementById('srs-banner').addEventListener('click',startReview);
+document.getElementById('srs-banner')?.addEventListener('click',startReview);
 // regen-banner event moved to openRegenModal section
 
 // ════════════════════════════════════
@@ -3410,14 +3411,14 @@ function openRegenModal(){
   });
 });
 
-document.getElementById('regen-modal-close').addEventListener('click',()=>{
+document.getElementById('regen-modal-close')?.addEventListener('click',()=>{
   document.getElementById('regen-modal').style.display='none';
 });
-document.getElementById('regen-modal').addEventListener('click',e=>{
+document.getElementById('regen-modal')?.addEventListener('click',e=>{
   if(e.target===e.currentTarget)e.currentTarget.style.display='none';
 });
 
-document.getElementById('regen-modal-gen').addEventListener('click',async()=>{
+document.getElementById('regen-modal-gen')?.addEventListener('click',async()=>{
   // 关闭弹窗，跳到探索页，开启词库注入，生成梗概
   document.getElementById('regen-modal').style.display='none';
 
@@ -3440,13 +3441,13 @@ document.getElementById('regen-modal-gen').addEventListener('click',async()=>{
 });
 
 // 词库再生成banner点击 → 打开弹窗
-document.getElementById('regen-banner').addEventListener('click',openRegenModal);
+document.getElementById('regen-banner')?.addEventListener('click',openRegenModal);
 
-document.getElementById('err-close').addEventListener('click',()=>{document.getElementById('err-modal').style.display='none';});
-document.getElementById('err-copy').addEventListener('click',()=>{
+document.getElementById('err-close')?.addEventListener('click',()=>{document.getElementById('err-modal').style.display='none';});
+document.getElementById('err-copy')?.addEventListener('click',()=>{
   navigator.clipboard.writeText(document.getElementById('err-msg').textContent).then(()=>toast('已复制'));
 });
-document.getElementById('err-modal').addEventListener('click',e=>{
+document.getElementById('err-modal')?.addEventListener('click',e=>{
   if(e.target===e.currentTarget)e.currentTarget.style.display='none';
 });
 
