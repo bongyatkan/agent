@@ -1172,7 +1172,7 @@ function getVocabToInject(max=8){
     const genPenalty=(v.generatedCount||0)*3;
     const daysSince=v.lastGenerated?Math.floor((Date.now()-v.lastGenerated)/(86400000)):999;
     const freshBonus=Math.min(daysSince,30);
-    const srsBonus=v.srsLevel||0;
+    const srsBonus=Math.min(5, Math.round((v.fsrsS||0)/10));
     return freshBonus-genPenalty+srsBonus+(Math.random()*2); // 加一点随机性
   };
 
@@ -1778,51 +1778,97 @@ function highlightInjectInSummary(text, injectWords){
 
 // ════════════════════════════════════
 // ════════════════════════════════════
-// SM-2 间隔重复算法
 // ════════════════════════════════════
-// 每个词卡有：easeFactor(难度系数,初始2.5)、interval(间隔天数)、reps(连续正确次数)
-// 评分1-4：1=不会(重来) 2=困难 3=还行 4=简单
+// FSRS算法（Free Spaced Repetition Scheduler）
+// 比SM-2更准确，不会产生"ease地狱"
+// 参考：Jarrett Ye的FSRS论文，使用简化版默认权重
+// 三个核心参数：S=稳定性(多久后忘), R=可提取性(现在还记得的概率), D=难度
+// ════════════════════════════════════
 
-function sm2(v, q){
-  // q: 1-4 评分
-  const ef=v.easeFactor||2.5;
-  const reps=v.reps||0;
-  const interval=v.interval||0;
+// FSRS默认权重（来自Anki官方默认参数，已被大量用户数据验证）
+const FSRS_W = [
+  0.4072, 1.1829, 3.1262, 15.4722,  // w0-w3: 初始稳定性（按评分1-4）
+  7.2102, 0.5316, 1.0651, 0.0589,   // w4-w7
+  1.5330, 0.1544, 1.0070, 1.9395,   // w8-w11
+  0.1100, 0.2900, 2.2700, 0.1400,   // w12-w15
+  2.9898                              // w16: 遗忘惩罚系数
+];
 
-  let newEf, newInterval, newReps;
+const FSRS_DECAY = -0.5;
+const FSRS_FACTOR = Math.pow(0.9, 1/FSRS_DECAY) - 1; // ≈0.11
 
-  if(q===1){ // 不会：重置，今天再来
-    newEf=Math.max(1.3, ef-0.2);
-    newInterval=0;
-    newReps=0;
-  } else if(q===2){ // 困难：缩短间隔，ease降低
-    newEf=Math.max(1.3, ef-0.15);
-    newInterval=reps===0?1:Math.max(1,Math.round(interval*0.5));
-    newReps=reps+1;
-  } else if(q===3){ // 还行：正常进展
-    newEf=ef;
-    if(reps===0) newInterval=1;
-    else if(reps===1) newInterval=3;
-    else newInterval=Math.round(interval*ef);
-    newReps=reps+1;
-  } else { // 简单：间隔更长，ease提升
-    newEf=Math.min(3.0, ef+0.1);
-    if(reps===0) newInterval=3;
-    else if(reps===1) newInterval=7;
-    else newInterval=Math.round(interval*ef*1.3);
-    newReps=reps+1;
-  }
-
-  return {newEf, newInterval, newReps};
+// 计算可提取性R（当前还记得的概率）
+function fsrsR(S, t){
+  // R = (1 + FACTOR * t/S)^DECAY
+  if(!S||S<=0) return 0;
+  return Math.pow(1 + FSRS_FACTOR * t / S, FSRS_DECAY);
 }
 
+// 初始稳定性（第一次看这个词，按评分给初始值）
+function fsrsInitS(q){
+  // q: 1=不会 2=困难 3=还行 4=简单
+  return Math.max(0.1, FSRS_W[q-1]);
+}
+
+// 回忆后的新稳定性
+function fsrsNextS(S, D, R, q){
+  if(q===1){
+    // 忘了：稳定性重置（遗忘后恢复公式）
+    return FSRS_W[11] *
+      Math.pow(D, -FSRS_W[12]) *
+      (Math.pow(S+1, FSRS_W[13]) - 1) *
+      Math.exp(FSRS_W[16] * (1-R));
+  }
+  // 记住了（q=2/3/4）：稳定性增长
+  const hardPenalty = q===2 ? FSRS_W[15] : 1;
+  const easyBonus   = q===4 ? FSRS_W[16] : 1;
+  return S * (
+    Math.exp(FSRS_W[8]) *
+    (11 - D) *
+    Math.pow(S, -FSRS_W[9]) *
+    (Math.exp(FSRS_W[10] * (1-R)) - 1) *
+    hardPenalty * easyBonus + 1
+  );
+}
+
+// 难度D更新（初始=5，范围1-10，越大越难）
+function fsrsNextD(D, q){
+  const deltaD = -FSRS_W[6] * (q - 3); // q=3时不变，q<3时增难，q>3时降难
+  return Math.min(10, Math.max(1, D + deltaD * ((10-D)/9)));
+}
+
+// 计算下次复习间隔（天），使R降到目标保留率时复习
+function fsrsInterval(S, requestRetention=0.9){
+  // 当R=requestRetention时的天数
+  const t = S / FSRS_FACTOR * (Math.pow(requestRetention, 1/FSRS_DECAY) - 1);
+  return Math.max(1, Math.round(t));
+}
+
+// 格式化间隔显示
+function fmtInterval(days){
+  if(days===0) return '今天';
+  if(days===1) return '明天';
+  if(days<7)   return days+'天后';
+  if(days<30)  return Math.round(days/7)+'周后';
+  if(days<365) return Math.round(days/30)+'个月后';
+  return Math.round(days/365)+'年后';
+}
+
+// 预览各评分对应的下次间隔（显示在按钮上）
 function previewInterval(v, q){
-  const {newInterval}=sm2(v,q);
-  if(newInterval===0) return '今天';
-  if(newInterval===1) return '明天';
-  if(newInterval<7) return newInterval+'天后';
-  if(newInterval<30) return Math.round(newInterval/7)+'周后';
-  return Math.round(newInterval/30)+'个月后';
+  const D = v.fsrsD||5;
+  const S = v.fsrsS||fsrsInitS(3);
+  const t = v.lastReview ? (Date.now()-v.lastReview)/86400000 : 0;
+  const R = v.lastReview ? fsrsR(S, t) : 1;
+
+  let newS;
+  if(!v.lastReview){
+    newS = fsrsInitS(q); // 新词
+  } else {
+    newS = Math.max(0.1, fsrsNextS(S, D, R, q));
+  }
+  if(q===1) return '今天';
+  return fmtInterval(fsrsInterval(newS));
 }
 
 function getSRSDue(){
@@ -1833,39 +1879,53 @@ function getSRSDue(){
 function getSRSCount(){ return getSRSDue().length; }
 
 function answerSRS(vocabId, q){
-  // q: 1-4
   const v=A.vocab.find(x=>x.id===vocabId);
   if(!v)return;
   const now=Date.now();
-  v.lastReview=now;
-  v.reviewCount=(v.reviewCount||0)+1;
+  const t = v.lastReview ? (now-v.lastReview)/86400000 : 0;
 
-  const {newEf,newInterval,newReps}=sm2(v,q);
-  v.easeFactor=newEf;
-  v.reps=newReps;
-  v.interval=newInterval;
-
-  if(q===1){
-    // 不会：加回今日队列，5分钟后再来
-    v.nextReview=now+5*60*1000;
-    v.status='learning';
-    v.streak=0;
-  } else {
-    v.streak=(v.streak||0)+1;
-    if(newInterval>=21&&newReps>=4){
-      v.status='reviewing';
-    } else if(newInterval<1){
-      v.status='learning';
-    } else {
-      v.status='reviewing';
-    }
-    v.nextReview=now+newInterval*24*60*60*1000;
+  // 迁移旧SM-2数据：如果没有FSRS参数则初始化
+  if(v.fsrsS===undefined){
+    v.fsrsS = v.interval>0 ? Math.max(1, v.interval) : fsrsInitS(3);
+    v.fsrsD = 5;
   }
 
-  // 掌握判定：间隔超过60天且ease>2.0
-  if(newInterval>=60&&newEf>=2.0&&newReps>=6){
-    v.status='mastered';
-    v.nextReview=null;
+  const S = v.fsrsS;
+  const D = v.fsrsD||5;
+  const R = v.lastReview ? fsrsR(S, t) : 1;
+
+  let newS, newD, newInterval;
+
+  if(!v.lastReview || v.reviewCount===0){
+    // 新词：用初始稳定性
+    newS = fsrsInitS(q);
+    newD = v.fsrsD||5;
+  } else {
+    newS = Math.max(0.1, fsrsNextS(S, D, R, q));
+    newD = fsrsNextD(D, q);
+  }
+
+  v.fsrsS = newS;
+  v.fsrsD = newD;
+  v.lastReview = now;
+  v.reviewCount = (v.reviewCount||0)+1;
+
+  if(q===1){
+    // 忘了：10分钟后重来
+    v.nextReview = now + 10*60*1000;
+    v.status = 'learning';
+    v.streak = 0;
+  } else {
+    v.streak = (v.streak||0)+1;
+    newInterval = fsrsInterval(newS);
+    v.interval = newInterval;
+    v.nextReview = now + newInterval*86400000;
+    v.status = newInterval>=21 ? 'reviewing' : 'learning';
+    // 掌握：稳定性超过180天（半年不会忘）
+    if(newS>=180){
+      v.status='mastered';
+      v.nextReview=null;
+    }
   }
   sv();
 }
@@ -2500,7 +2560,7 @@ function renderVocabList(){
       </div>
       ${exHtml?`<div class="vc-examples">${exHtml}</div>`:''}
       <div style="font-size:11px;color:var(--ink3);display:flex;gap:8px;flex-wrap:wrap">
-        <span>Lv.${v.srsLevel||0}</span>
+        <span>S:${(v.fsrsS||0).toFixed(0)}天</span>
         ${v.nextReview?`<span>下次：${new Date(v.nextReview).toLocaleDateString('zh-CN')}</span>`:'<span style="color:var(--acc2)">今日待复习</span>'}
         ${v.reviewCount?`<span>复习${v.reviewCount}次</span>`:''}
         ${v.generatedCount?`<span>再生成${v.generatedCount}次</span>`:'<span style="color:var(--ink3)">未再生成</span>'}
@@ -2516,8 +2576,8 @@ function renderVocabList(){
         if(btn.dataset.action==='toggle'){
           const v=A.vocab.find(x=>x.id===id);
           if(v){
-            if(v.status==='mastered'){v.status='learning';v.srsLevel=Math.max(0,(v.srsLevel||0)-1);v.nextReview=Date.now();}
-            else{v.status='mastered';v.srsLevel=6;v.nextReview=null;}
+            if(v.status==='mastered'){v.status='learning';v.fsrsS=1;v.fsrsD=5;v.nextReview=Date.now();}
+            else{v.status='mastered';v.fsrsS=999;v.nextReview=null;}
           }
           sv();renderVocabList();
         } else if(btn.dataset.action==='del'){
@@ -3219,10 +3279,12 @@ function showFlipCard(){
   document.getElementById('rfb-cn').textContent=v.cn||'';
   const ex=(v.examples?.[0]?.sentence||'').replace(/<[^>]*>/g,'');
   document.getElementById('rfb-example').textContent=ex;
-  const reps=v.reps||0;
-  const ef=v.easeFactor?v.easeFactor.toFixed(1):'2.5';
+  const fsrsS=(v.fsrsS||0).toFixed(1);
+  const fsrsD=(v.fsrsD||5).toFixed(1);
   const interval=v.interval||0;
-  document.getElementById('rfb-meta').textContent=`复习${v.reviewCount||0}次 · 难度${ef} · 间隔${interval}天`;
+  const t=v.lastReview?(Date.now()-v.lastReview)/86400000:0;
+  const r=v.lastReview?Math.round(fsrsR(v.fsrsS||1,t)*100):100;
+  document.getElementById('rfb-meta').textContent=`复习${v.reviewCount||0}次 · 稳定性${fsrsS}天 · 难度${fsrsD} · 当前记忆率${r}%`;
 
   // 预填评分按钮时间预览
   document.getElementById('rb-hard-time').textContent=previewInterval(v,2);
