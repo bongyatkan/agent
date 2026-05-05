@@ -329,6 +329,14 @@ body{font-family:'Noto Serif SC','Noto Serif JP',serif;transition:background .3s
         <div class="tag-row" id="learn-tags"></div>
       </div>
 
+      <!-- 额外注入词汇（生成时带入，不做词卡） -->
+      <div id="extra-words-area" style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:6px;letter-spacing:.05em">✦ 额外注入词汇（不入词库，只在文章里出现）</div>
+        <div id="extra-words-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;min-height:0"></div>
+        <div style="display:flex;gap:6px">
+          <input type="text" id="extra-word-input" placeholder="输入词汇回车添加…" style="flex:1;border:1px solid var(--bdr);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--ink);outline:none">
+        </div>
+      </div>
       <button class="search-btn" id="search-btn">✦ 生成梗概</button>
 
 
@@ -767,6 +775,7 @@ let A={
   writeLang:'cn',  // 写作语言：cn=中文爽文 jp=日文学习模式
   tagLang:'jp',    // 标签库语言：jp或cn
   selCharTags:[],  // 选中的角色名标签
+  extraWords:[],    // 额外注入词汇（不入词库）
   customTags:[],   // 用户自定义标签库
   selCustomTags:[], // 当前选中的自定义标签
   characters:[],  // [{id,name,card}]
@@ -780,6 +789,7 @@ let A={
   learnTags:[],
   selLearnTags:[],
   searchResults:[],   // [{title,titleJp,tags,summary,warnTags}]
+  curPage:0,          // 当前显示第几页（每页5个）
   selectedResult:null,
   searchHistory:[],   // [{id,contentTags,styleTags,learnTags,results:[],createdAt}]
   curHistoryId:null,  // 当前在看的搜索历史ID
@@ -800,7 +810,7 @@ function ld(){
   try{
     const d=JSON.parse(r);
     const _savedTheme=d.theme; // 先记下来
-    ['theme','presets','activeP','model','cfg','books','vocab','searchHistory','chatCache','characters','activeChars','worlds','activeWorld','writeLang','selCharTags','customTags','selCustomTags','tagLang'].forEach(k=>{if(d[k]!==undefined)A[k]=d[k];});
+    ['theme','presets','activeP','model','cfg','books','vocab','searchHistory','chatCache','characters','activeChars','worlds','activeWorld','writeLang','selCharTags','extraWords','customTags','selCustomTags','tagLang'].forEach(k=>{if(d[k]!==undefined)A[k]=d[k];});
     // 标签：从存档里取用户自定义标签（不在DEFAULT里的），和DEFAULT合并
     const mergeCustomTags=(saved, defaults)=>{
       const custom=(saved||[]).filter(t=>!defaults.includes(t));
@@ -1273,7 +1283,10 @@ async function generateOutlines(forceNew=false){
   const special=A.cfg.specialInst||'';
   // 带入生词
   const injectToggle=document.getElementById('vocab-inject-toggle');
-  const injectWords=injectToggle?.checked?getVocabToInject(8):[];
+  const vocabInject=injectToggle?.checked?getVocabToInject(8):[];
+  // 合并词库词和额外输入词（额外词无id，不计generatedCount）
+  const extraInject=(A.extraWords||[]).map(w=>({word:w,cn:'',id:null}));
+  const injectWords=[...vocabInject,...extraInject];
   const injectPromptPart=injectWords.length?
     `
 请在文章里自然地用到以下词汇（每个词至少用一次，融入情节，不要刻意堆砌）：
@@ -1337,12 +1350,13 @@ STATS:hits数字/kudos数字/bookmarks数字/comments数字/chapters数字/endin
     }
 
     if(existIdx>=0){
-      // 追加到现有历史（下一页）
+      // 下一页：新结果追加，跳到最后一页
       A.searchHistory[existIdx].results.push(...newResults);
-      A.searchHistory[existIdx].page=(A.searchHistory[existIdx].page||1)+1;
       if(injectWords.length)A.searchHistory[existIdx].injectWords=injectWords.map(v=>({word:v.word,cn:v.cn,id:v.id}));
       A.curHistoryId=A.searchHistory[existIdx].id;
       A.searchResults=A.searchHistory[existIdx].results;
+      // 跳到最新一页
+      A.curPage=Math.floor((A.searchResults.length-1)/5);
     } else {
       // 新建历史
       const tagLabels=[...A.selContentTags,...A.selStyleTags,...A.selLearnTags].join(' · ')||'全部';
@@ -1360,6 +1374,7 @@ STATS:hits数字/kudos数字/bookmarks数字/comments数字/chapters数字/endin
       if(A.searchHistory.length>20)A.searchHistory=A.searchHistory.slice(0,20);
       A.curHistoryId=hist.id;
       A.searchResults=newResults;
+      A.curPage=0;
     }
 
     // 更新injectWords的generatedCount
@@ -1375,7 +1390,7 @@ STATS:hits数字/kudos数字/bookmarks数字/comments数字/chapters数字/endin
     const hist=A.searchHistory.find(h=>h.id===A.curHistoryId);
     showResultsSection(hist);
     renderHistoryList();
-    updateVocabBanner();
+    updateVocabInjectPreview();
     const _ip=document.getElementById('outline-inject-preview');
     if(_ip)_ip.style.display='none';
     const ip=document.getElementById('outline-inject-preview');
@@ -1431,6 +1446,7 @@ function renderHistoryList(){
       // 加载这条历史
       A.curHistoryId=h.id;
       A.searchResults=h.results;
+      A.curPage=0;
       renderOutlines();
       showResultsSection(h);
     });
@@ -1441,7 +1457,14 @@ function renderHistoryList(){
 function renderOutlines(){
   const el=document.getElementById('search-results');
   el.innerHTML='';
-  A.searchResults.forEach((w,i)=>{
+  const PAGE=5;
+  const total=A.searchResults.length;
+  const totalPages=Math.max(1,Math.ceil(total/PAGE));
+  A.curPage=Math.min(A.curPage||0, totalPages-1);
+  const start=A.curPage*PAGE;
+  const pageItems=A.searchResults.slice(start,start+PAGE);
+
+  pageItems.forEach((w,i)=>{
     const card=document.createElement('div');
     card.className='ao3-card';
     const ratingColor={G:'var(--green)',T:'var(--acc)',M:'#e8a030',E:'var(--red)'}[w.rating]||'var(--ink3)';
@@ -1481,6 +1504,20 @@ function renderOutlines(){
     });
     el.appendChild(card);
   });
+
+  // 页码条
+  if(totalPages>1){
+    const pager=document.createElement('div');
+    pager.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 0 4px;flex-wrap:wrap';
+    for(let p=0;p<totalPages;p++){
+      const btn=document.createElement('button');
+      btn.textContent=p+1;
+      btn.style.cssText=`border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-family:inherit;cursor:pointer;background:${p===A.curPage?'var(--acc)':'var(--surface2)'};color:${p===A.curPage?'#fff':'var(--ink)'};`;
+      btn.addEventListener('click',()=>{A.curPage=p;renderOutlines();});
+      pager.appendChild(btn);
+    }
+    el.appendChild(pager);
+  }
 }
 
 // ════════════════════════════════════
@@ -2320,32 +2357,52 @@ function renderChapter(idx){
   const savedWords=A.vocab.filter(v=>v.bookId===A.curBook||A.vocab.some(vv=>vv.word===v.word)).map(v=>v.word);
   const allSavedWords=A.vocab.map(v=>v.word).filter(Boolean);
 
-  const contentHtml=paras.map((p,i)=>{
-    // 分离日文主体和中文翻译（末尾括号内的中文）
-    const cnMatch=p.match(/[（(]([^（）()]{2,150})[）)]\s*$/);
-    let jpPart=p, cnPart='';
-    if(cnMatch){
-      const matchStart=p.lastIndexOf(cnMatch[0]);
-      jpPart=p.slice(0,matchStart).trim();
-      cnPart=cnMatch[1].trim();
-      if(!/[\u4e00-\u9fff]/.test(cnPart)){jpPart=p;cnPart='';}
+  const book_=A.books.find(b=>b.id===A.curBook);
+  const injectWds=(book_?.injectWords||[]).map(v=>v.word).filter(Boolean);
+
+  function renderContentWithHtml(raw){
+    const lines=raw.split('\n');
+    let out='';let paraIdx=0;let i=0;
+    while(i<lines.length){
+      const line=lines[i].trim();
+      if(!line){i++;continue;}
+      // HTML块（div/span/blockquote等）直接渲染
+      if(/^<(div|span|hr|table|blockquote|section|figure|!--|style)[\s>\/]/i.test(line)){
+        let block='';let depth=0;
+        while(i<lines.length){
+          const l=lines[i];
+          const opens=(l.match(/<[a-zA-Z][^/!>]*(?<!\/)>/g)||[]).length;
+          const closes=(l.match(/<\/[a-zA-Z][^>]*>/g)||[]).length;
+          block+=l+'\n';depth+=opens-closes;i++;
+          if(depth<=0&&block.trim())break;
+        }
+        out+='<div class="html-block">'+block+'</div>';
+        continue;
+      }
+      // 普通段落
+      const p=lines[i];i++;
+      if(!p.trim())continue;
+      const cnMatch=p.match(/[（(]([^（）()]{2,150})[）)]\s*$/);
+      let jpPart=p,cnPart='';
+      if(cnMatch){
+        const ms=p.lastIndexOf(cnMatch[0]);
+        jpPart=p.slice(0,ms).trim();cnPart=cnMatch[1].trim();
+        if(!/[\u4e00-\u9fff]/.test(cnPart)){jpPart=p;cnPart='';}
+      }
+      let fixed=jpPart
+        .replace(/([一-龥々〆ヵヶ]{1,8})<rt>([^<]{1,20})<\/rt>/g,'<ruby>$1<rt>$2</rt></ruby>')
+        .replace(/([一-龥々〆ヵヶ]{1,8})<rt>([^<]{1,20})(?=<|$)/g,'<ruby>$1<rt>$2</rt></ruby>');
+      const safe=fixed.replace(/&(?!amp;|lt;|gt;)/g,'&amp;')
+        .replace(/<(?!\/ruby|\/rt|\/rp|ruby|rt |rp)/g,'&lt;');
+      const hi=highlightSavedWords(safe,allSavedWords,injectWds);
+      const cnHtml=cnPart?`<span class="cn-trans">${cnPart}</span>`:'';
+      out+=`<p data-pi="${paraIdx}">${hi}${cnHtml}</p>`;
+      paraIdx++;
     }
-    // 保留ruby标签，转义其他HTML
-    // 容错：修复AI生成的不完整ruby标签
-    // 模式1：字<rt>よみ</rt> → <ruby>字<rt>よみ</rt></ruby>
-    // 模式2：字<rt>よみ（无结束标签） → <ruby>字<rt>よみ</rt></ruby>
-    let fixedRuby=jpPart
-      .replace(/([一-龥々〆ヵヶ]{1,8})<rt>([^<]{1,20})<\/rt>/g,'<ruby>$1<rt>$2</rt></ruby>')
-      .replace(/([一-龥々〆ヵヶ]{1,8})<rt>([^<]{1,20})(?=<|$)/g,'<ruby>$1<rt>$2</rt></ruby>');
-    const safe=fixedRuby.replace(/&(?!amp;|lt;|gt;)/g,'&amp;')
-      .replace(/<(?!\/ruby|\/rt|\/rp|ruby|rt |rp)/g,'&lt;');
-    // 高亮已存生词（简单文字匹配，不破坏ruby标签）
-    const book_=A.books.find(b=>b.id===A.curBook);
-    const injectWds=(book_?.injectWords||[]).map(v=>v.word).filter(Boolean);
-    const highlighted=highlightSavedWords(safe, allSavedWords, injectWds);
-    const cnHtml=cnPart?`<span class="cn-trans">${cnPart}</span>`:'';
-    return `<p data-pi="${i}">${highlighted}${cnHtml}</p>`;
-  }).join('');
+    return out;
+  }
+
+  const contentHtml=renderContentWithHtml(ch.content||'');
 
   // Author's note
   const anHtml=ch.an?`<div class="fic-an"><div class="fic-an-label">AUTHOR'S NOTE</div>${escH(ch.an)}</div>`:'';
@@ -2846,7 +2903,7 @@ function showTab(name){
     }
   });
   if(name==='shelf')renderShelf();
-  if(name==='vocab'){renderVocabList();updateVocabBanner();}
+  if(name==='vocab'){renderVocabList();updateVocabInjectPreview();}
 }
 function openSheet(id){document.getElementById(id).classList.add('on');document.getElementById('ov').classList.add('on');}
 function closeSheet(id){document.getElementById(id).classList.remove('on');if(!document.querySelector('.sheet.on'))document.getElementById('ov').classList.remove('on');}
@@ -3121,6 +3178,31 @@ document.getElementById('write-btn-jp')?.addEventListener('click',()=>{
   A.writeLang='jp'; sv(); renderTags();
 });
 
+// 额外注入词汇
+function renderExtraWords(){
+  const el=document.getElementById('extra-words-tags');
+  if(!el)return;
+  el.innerHTML=A.extraWords.length
+    ? A.extraWords.map(w=>`<span style="background:var(--acc2);opacity:.85;color:#fff;border-radius:6px;padding:3px 8px;font-size:12px;display:flex;align-items:center;gap:4px">${escH(w)}<span style="cursor:pointer;opacity:.7" data-del="${escH(w)}">×</span></span>`).join('')
+    : '';
+  el.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      A.extraWords=A.extraWords.filter(x=>x!==btn.dataset.del);
+      sv();renderExtraWords();
+    });
+  });
+}
+document.getElementById('extra-word-input')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    const v=e.target.value.trim();
+    if(v&&!A.extraWords.includes(v)){A.extraWords.push(v);}
+    e.target.value='';sv();renderExtraWords();
+  }
+});
+setTimeout(()=>renderExtraWords(),50);
+
 // 标签库语言切换
 document.getElementById('lang-btn-jp')?.addEventListener('click',()=>{
   A.tagLang='jp';
@@ -3343,11 +3425,11 @@ function showReviewDone(){
 // 复习关闭按钮
 document.getElementById('review-close')?.addEventListener('click',()=>{
   document.getElementById('review-screen').style.display='none';
-  updateVocabBanner();
+  updateVocabInjectPreview();
 });
 document.getElementById('review-done-close')?.addEventListener('click',()=>{
   document.getElementById('review-screen').style.display='none';
-  updateVocabBanner();
+  updateVocabInjectPreview();
 });
 document.getElementById('vocab-inject-toggle')?.addEventListener('change',updateVocabInjectPreview);
 document.getElementById('rqc-input')?.addEventListener('keydown',e=>{
@@ -3471,7 +3553,7 @@ showScr('search');
 // DOM渲染后再初始化标签，避免元素还不存在
 setTimeout(()=>{renderTags();},0);
 showTab('search');
-updateVocabBanner();
+updateVocabInjectPreview();
 </script>
 </body>
 </html>
