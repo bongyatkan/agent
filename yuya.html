@@ -761,7 +761,7 @@ const DEFAULT_STYLE_TAGS=TAG_GROUPS_JP_STYLE.flatMap(g=>g.tags);
 const DEFAULT_LEARN_TAGS=['外来語多め','ビジネス語','敬語・丁寧語','複合動詞','N2語彙','N1語彙','大阪弁','若者言葉','感情語彙','身体表現','慣用句','擬音語・擬態語','季語'];
 
 let A={
-  theme:'dark',
+  theme:'light',
   presets:[],activeP:null,model:'',
   cfg:{charName:'',charCard:'',jpLevel:'natural',specialInst:'',sysPrompt:''},
   writeLang:'cn',  // 写作语言：cn=中文爽文 jp=日文学习模式
@@ -954,15 +954,16 @@ function renderTags(){
   const activeStyleGroups=getActiveTagGroups('style');
   renderTagList('content-tags', null, A.selContentTags, 'content', activeContentGroups);
   renderTagList('style-tags', null, A.selStyleTags, 'style', activeStyleGroups);
-  // 学习标签只在日文模式显示
+  // 学习标签：写作模式jp 或 标签库jp 时显示
+  const showLearn=(A.writeLang==='jp'||A.tagLang==='jp');
   const learnSec=document.getElementById('learn-tags-section');
-  if(learnSec)learnSec.style.display=A.writeLang==='jp'?'':'none';
-  if(A.writeLang==='jp')renderTagList('learn-tags', A.learnTags, A.selLearnTags, 'learn');
+  if(learnSec)learnSec.style.display=showLearn?'':'none';
+  if(showLearn)renderTagList('learn-tags', A.learnTags, A.selLearnTags, 'learn');
   renderTagList('rm-content-tags', null, A.selContentTags, 'content', activeContentGroups);
   renderTagList('rm-style-tags', null, A.selStyleTags, 'style', activeStyleGroups);
   const rmLearnSec=document.getElementById('rm-learn-tags-section');
-  if(rmLearnSec)rmLearnSec.style.display=A.writeLang==='jp'?'':'none';
-  if(A.writeLang==='jp')renderTagList('rm-learn-tags', A.learnTags, A.selLearnTags, 'learn');
+  if(rmLearnSec)rmLearnSec.style.display=showLearn?'':'none';
+  if(showLearn)renderTagList('rm-learn-tags', A.learnTags, A.selLearnTags, 'learn');
 }
 
 function renderSelectedBar(){
@@ -3464,9 +3465,10 @@ if(!A.contentTags.length)A.contentTags=[...DEFAULT_CONTENT_TAGS];
 if(!A.styleTags.length)A.styleTags=[...DEFAULT_STYLE_TAGS];
 if(!A.learnTags.length)A.learnTags=[...DEFAULT_LEARN_TAGS];
 setTheme(A.theme);
-renderTags();
 renderHistoryList();
 showScr('search');
+// DOM渲染后再初始化标签，避免元素还不存在
+setTimeout(()=>{renderTags();},0);
 showTab('search');
 updateVocabBanner();
 </script>
