@@ -1359,7 +1359,7 @@ STATS:hits数字/kudos数字/bookmarks数字/comments数字/chapters数字/endin
       A.curPage=Math.floor((A.searchResults.length-1)/5);
     } else {
       // 新建历史
-      const tagLabels=[...A.selContentTags,...A.selStyleTags,...A.selLearnTags].join(' · ')||'全部';
+      const tagLabels=[...A.selCharTags,...A.selCustomTags,...A.selContentTags,...A.selStyleTags,...A.selLearnTags].join(' · ')||'全部';
       const isRegen=injectWords.length>0;
       const regenWordLabel=isRegen?(' · '+injectWords.map(v=>v.word).join(' ')):'';
       const hist={
@@ -1760,7 +1760,8 @@ Specific Instruction for this chapter (User/Protagonist Action): Follow the natu
 
 // 从段落HTML里提取包含目标词的句子（去掉标签，按句号切）
 function extractSentence(paraEl, word){
-  const p=paraEl.tagName==='P'?paraEl:paraEl.closest('p')||paraEl;
+  // 找最近的p，或者直接用传入元素
+  const p=paraEl.tagName==='P'?paraEl:(paraEl.closest('p')||paraEl.closest('[data-pi]')||paraEl);
   if(!p)return '';
   const clone=p.cloneNode(true);
   // 先展开ruby：删掉rt/rp，只留汉字主体
@@ -2367,7 +2368,8 @@ function renderChapter(idx){
       const line=lines[i].trim();
       if(!line){i++;continue;}
       // HTML块（div/span/blockquote等）直接渲染
-      if(/^<(div|span|hr|table|blockquote|section|figure|!--|style)[\s>\/]/i.test(line)){
+      // 排除ruby标签，只把div/span等块级HTML直接渲染
+      if(/^<(div|span|hr|table|blockquote|section|figure|!--|style)[\s>\/]/i.test(line)&&!/^<ruby/i.test(line)){
         let block='';let depth=0;
         while(i<lines.length){
           const l=lines[i];
@@ -2465,8 +2467,10 @@ function renderChapter(idx){
       // 立刻保存选区信息（手机上touchend后sel可能消失）
       let node=range.commonAncestorContainer;
       if(node.nodeType===3)node=node.parentElement;
+      // 在整个reader里找最近的p（包括html-block内部的p）
       const para=node.closest('p')||
-        [...chContent.querySelectorAll('p')].find(p=>p.contains(range.commonAncestorContainer));
+        [...chContent.querySelectorAll('p,[data-pi]')].find(p=>p.contains(range.commonAncestorContainer))||
+        node.closest('[class]')||node;
 
       // 保存到state
       A.pendingVocabSel=selectedText;
@@ -2584,9 +2588,33 @@ function renderShelf(){
 // ════════════════════════════════════
 let vocabFilter='all';
 function renderVocabList(){
+  // 更新复习入口
+  const srsBanner=document.getElementById('srs-banner');
+  const srsCount=document.getElementById('srs-count');
+  const due=getSRSDue();
+  if(srsBanner&&srsCount){
+    if(due.length){
+      srsBanner.style.display='block';
+      srsCount.textContent=due.length;
+    } else {
+      srsBanner.style.display='none';
+    }
+  }
+  // 更新再生成入口
+  const regenBanner=document.getElementById('regen-banner');
+  const regenInfo=document.getElementById('regen-banner-info');
+  const reviewable=A.vocab.filter(v=>v.status!=='mastered'&&v.reviewCount>0);
+  if(regenBanner&&regenInfo){
+    if(reviewable.length>=2){
+      regenBanner.style.display='block';
+      regenInfo.textContent=`${reviewable.length}个学习中的词，点击生成新文章`;
+    } else {
+      regenBanner.style.display='none';
+    }
+  }
   const el=document.getElementById('vocab-list');
   let items=A.vocab;
-  if(vocabFilter==='learning')items=items.filter(v=>v.status!=='mastered');
+  if(vocabFilter==='learning')items=items.filter(v=>v.status!=='mastered'); // 包含new/learning/reviewing
   if(vocabFilter==='mastered')items=items.filter(v=>v.status==='mastered');
   if(!items.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--ink3);font-size:14px">'+( A.vocab.length?'没有符合条件的词':'词库是空的，读文章时点击「存词」添加')+'</div>';return;}
   el.innerHTML='';
