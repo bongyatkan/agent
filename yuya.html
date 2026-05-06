@@ -283,118 +283,119 @@ ruby rt{font-size:.55em;color:var(--ink3);line-height:1.2;text-align:center;lett
   </div>
 
   <!-- SEARCH TAB -->
-  <div id="tab-search" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div class="body-pad">
+  <div id="tab-search" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
 
-      <!-- 已选标签搜索框 -->
-      <div id="selected-tags-bar" style="display:none;flex-wrap:wrap;gap:6px;padding:10px 12px;background:var(--surface2);border:1px solid var(--acc);border-radius:10px;margin-bottom:10px;min-height:36px;align-items:center"></div>
-
-      <!-- 写作模式切换 -->
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--bdr)">
-        <div style="font-size:11px;color:var(--ink3);margin-right:2px">模式</div>
-        <button id="write-btn-cn" class="tbtn" style="font-size:12px;padding:4px 12px">📖 中文爽文</button>
-        <button id="write-btn-jp" class="tbtn" style="font-size:12px;padding:4px 12px">📚 日文学习</button>
-        <div id="write-mode-hint" style="font-size:11px;color:var(--ink3);margin-left:4px"></div>
-      </div>
-
-      <!-- 标签库切换 -->
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <div style="font-size:11px;color:var(--ink3)">標籤庫</div>
-        <button id="lang-btn-jp" class="tbtn" style="font-size:12px;padding:3px 10px">🇯🇵 日文</button>
-        <button id="lang-btn-cn" class="tbtn" style="font-size:12px;padding:3px 10px">🇨🇳 中文</button>
-      </div>
-
-      <!-- 角色标签区（最上面） -->
-      <div id="char-tags-section" style="display:none" class="tag-section">
-        <div class="tag-section-title">角色</div>
-        <div class="tag-row" id="char-tags-row"></div>
-      </div>
-
-      <!-- 自定义标签 -->
-      <div id="custom-tags-section" style="display:none" class="tag-section">
-        <div class="tag-section-title">我的標籤</div>
-        <div class="tag-row" id="my-custom-tags"></div>
-      </div>
-
-      <div class="tag-section">
-        <div class="tag-section-title">内容標籤</div>
-        <div class="tag-row" id="content-tags"></div>
-      </div>
-
-      <div class="tag-section">
-        <div class="tag-section-title">風格標籤</div>
-        <div class="tag-row" id="style-tags"></div>
-      </div>
-
-      <div class="tag-section" id="learn-tags-section">
-        <div class="tag-section-title">學習重點</div>
-        <div class="tag-row" id="learn-tags"></div>
-      </div>
-
-      <!-- 额外注入词汇（生成时带入，不做词卡） -->
-      <div id="extra-words-area" style="margin-bottom:10px">
-        <div style="font-size:11px;color:var(--ink3);margin-bottom:6px;letter-spacing:.05em">✦ 额外注入词汇（不入词库，只在文章里出现）</div>
-        <div id="extra-words-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;min-height:0"></div>
-        <div style="display:flex;gap:6px">
-          <input type="text" id="extra-word-input" placeholder="输入词汇回车添加…" style="flex:1;border:1px solid var(--bdr);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--ink);outline:none">
-        </div>
-      </div>
-      <button class="search-btn" id="search-btn">✦ 生成梗概</button>
-
-
-      <!-- Search History -->
-      <div id="history-section" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-size:11px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase">搜索历史</div>
-          <button class="tbtn" id="clear-history-btn" style="font-size:11px;padding:3px 8px;color:var(--red)">清空历史</button>
-        </div>
-        <div id="history-list" style="display:flex;flex-direction:column;gap:8px"></div>
-      </div>
-
-      <!-- Results -->
-      <div id="results-section" style="display:none;flex-direction:column;gap:10px">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <div style="flex:1;font-size:11px;color:var(--ink3)" id="results-label">第1页 · 5篇梗概</div>
-          <button class="tbtn" id="next-page-btn" style="font-size:12px">下一页 →</button>
-          <button class="tbtn" id="regen-btn" style="font-size:12px;color:var(--red)">重新生成</button>
-        </div>
-        <div id="outline-inject-preview" style="display:none;flex-wrap:wrap;gap:6px;align-items:center"></div>
-        <div id="search-results" style="display:flex;flex-direction:column;gap:12px"></div>
-      </div>
-
-      <!-- vocab-inject-toggle：保留逻辑，UI统一在词库tab -->
-      <input type="checkbox" id="vocab-inject-toggle" style="display:none">
-      <div id="vocab-inject-preview" style="display:none"></div>
-      <div id="vocab-inject-count" style="display:none"></div>
-      <button class="generate-btn" id="gen-full-btn" style="display:none">📖 生成完整正文</button>
-    </div>
-  </div>
-
-  <!-- SHELF TAB -->
-  <div id="tab-shelf" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none">
-    <div class="body-pad" id="shelf-list"></div>
-  </div>
-
-  <!-- VOCAB TAB -->
-  <div id="tab-vocab" style="flex:1;overflow:hidden;display:none;flex-direction:column">
-    <div class="vocab-filter" style="flex-shrink:0">
-      <button class="vf-btn on" data-vf="all">全部</button>
-      <button class="vf-btn" data-vf="learning">学习中</button>
-      <button class="vf-btn" data-vf="mastered">已掌握</button>
-    </div>
-    <!-- 复习 + 再生成入口 -->
-    <div style="margin:10px 14px 0;display:flex;flex-direction:column;gap:8px" id="vocab-actions">
-      <div id="srs-banner" style="display:none;background:var(--acc2);border-radius:10px;padding:12px 16px;cursor:pointer">
-        <div style="font-size:14px;color:var(--ink);letter-spacing:.03em">✦ 今日复习 <span id="srs-count" style="font-weight:500">0</span> 个词</div>
-        <div style="font-size:11px;color:var(--ink2);margin-top:3px">点击开始</div>
-      </div>
-      <div id="regen-banner" style="display:none;background:var(--surface2);border:1px solid var(--bdr);border-radius:10px;padding:12px 16px;cursor:pointer">
-        <div style="font-size:14px;color:var(--ink)">♻ 用词库生词再生成同人文</div>
-        <div style="font-size:11px;color:var(--ink3);margin-top:3px" id="regen-banner-info">加载中…</div>
+    <!-- ══ 顶部固定：已选标签 + 生成按钮 ══ -->
+    <div id="search-sticky" style="flex-shrink:0;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--bdr);display:flex;flex-direction:column;gap:8px">
+      <!-- 已选标签行 -->
+      <div id="selected-tags-bar" style="display:none;flex-wrap:wrap;gap:5px;align-items:center;min-height:0"></div>
+      <!-- 生成按钮行 -->
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="search-btn" id="search-btn" style="flex:1;padding:12px;font-size:14px">✦ 生成梗概</button>
+        <button id="write-btn-cn" class="tbtn" style="font-size:11px;padding:6px 10px;white-space:nowrap">📖 中文</button>
+        <button id="write-btn-jp" class="tbtn" style="font-size:11px;padding:6px 10px;white-space:nowrap">📚 日文</button>
+        <div id="write-mode-hint" style="display:none"></div>
       </div>
     </div>
-    <div class="body" style="flex:1">
-      <div class="body-pad" id="vocab-list"></div>
+
+    <!-- ══ 下方滚动区 ══ -->
+    <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+      <div class="body-pad">
+
+        <!-- 标签库切换 -->
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+          <span style="font-size:11px;color:var(--ink3)">標籤庫</span>
+          <button id="lang-btn-jp" class="tbtn" style="font-size:11px;padding:3px 8px">🇯🇵 日文</button>
+          <button id="lang-btn-cn" class="tbtn" style="font-size:11px;padding:3px 8px">🇨🇳 中文</button>
+        </div>
+
+        <!-- 角色标签 -->
+        <div id="char-tags-section" style="display:none" class="tag-section">
+          <div class="tag-section-title">角色</div>
+          <div class="tag-row" id="char-tags-row"></div>
+        </div>
+
+        <!-- 自定义标签 -->
+        <div id="custom-tags-section" style="display:none" class="tag-section">
+          <div class="tag-section-title">我的標籤</div>
+          <div class="tag-row" id="my-custom-tags"></div>
+        </div>
+
+        <!-- 内容/风格/学习标签 -->
+        <div class="tag-section">
+          <div class="tag-section-title">内容標籤</div>
+          <div class="tag-row" id="content-tags"></div>
+        </div>
+        <div class="tag-section">
+          <div class="tag-section-title">風格標籤</div>
+          <div class="tag-row" id="style-tags"></div>
+        </div>
+        <div class="tag-section" id="learn-tags-section">
+          <div class="tag-section-title">學習重點</div>
+          <div class="tag-row" id="learn-tags"></div>
+        </div>
+
+        <!-- ══ 词汇注入区 ══ -->
+        <div style="background:var(--surface2);border:1px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:12px">
+          <div style="font-size:12px;color:var(--ink2);font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+            <span>✦ 词汇注入</span>
+            <span style="font-size:10px;color:var(--ink3);font-weight:normal">生成文章时带入这些词</span>
+          </div>
+
+          <!-- 领域词库生成 -->
+          <div style="margin-bottom:10px">
+            <div style="display:flex;gap:6px">
+              <input type="text" id="domain-input" placeholder="输入领域，如：超市清洁用品、Excel会计操作…"
+                style="flex:1;border:1px solid var(--bdr);border-radius:8px;padding:8px 10px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--ink);outline:none">
+              <button id="domain-gen-btn" style="background:var(--acc2);border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-family:inherit;color:#fff;cursor:pointer;white-space:nowrap">生成词表</button>
+            </div>
+            <!-- 词表结果 -->
+            <div id="domain-result" style="display:none;margin-top:8px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <span style="font-size:11px;color:var(--ink3)" id="domain-result-label"></span>
+                <div style="display:flex;gap:6px">
+                  <button id="domain-add-all" style="background:none;border:1px solid var(--acc2);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--acc2);cursor:pointer">全选加入</button>
+                  <button id="domain-clear" style="background:none;border:none;font-size:11px;color:var(--ink3);cursor:pointer">收起</button>
+                </div>
+              </div>
+              <div id="domain-words-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto"></div>
+            </div>
+          </div>
+
+          <!-- 手动额外输入 -->
+          <div>
+            <div id="extra-words-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;min-height:0"></div>
+            <input type="text" id="extra-word-input" placeholder="手动输入词汇，回车添加…"
+              style="width:100%;border:1px solid var(--bdr);border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--ink);outline:none">
+          </div>
+        </div>
+
+        <!-- 搜索历史 -->
+        <div id="history-section" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:11px;color:var(--ink3);letter-spacing:.1em">搜索历史</div>
+            <button class="tbtn" id="clear-history-btn" style="font-size:11px;padding:3px 8px;color:var(--red)">清空历史</button>
+          </div>
+          <div id="history-list" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+
+        <!-- 结果 -->
+        <div id="results-section" style="display:none;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div style="flex:1;font-size:11px;color:var(--ink3)" id="results-label">第1页 · 5篇梗概</div>
+            <button class="tbtn" id="next-page-btn" style="font-size:12px">下一页 →</button>
+            <button class="tbtn" id="regen-btn" style="font-size:12px;color:var(--red)">重新生成</button>
+          </div>
+          <div id="outline-inject-preview" style="display:none;flex-wrap:wrap;gap:6px;align-items:center"></div>
+          <div id="search-results" style="display:flex;flex-direction:column;gap:12px"></div>
+        </div>
+
+        <!-- 隐藏控件 -->
+        <input type="checkbox" id="vocab-inject-toggle" style="display:none">
+        <div id="vocab-inject-preview" style="display:none"></div>
+        <div id="vocab-inject-count" style="display:none"></div>
+        <button class="generate-btn" id="gen-full-btn" style="display:none">📖 生成完整正文</button>
+      </div>
     </div>
   </div>
 </div>
@@ -791,6 +792,7 @@ let A={
   tagLang:'jp',    // 标签库语言：jp或cn
   selCharTags:[],  // 选中的角色名标签
   extraWords:[],    // 额外注入词汇（不入词库）
+  jlptCache:{},     // JLPT词级缓存 word->level
   customTags:[],   // 用户自定义标签库
   selCustomTags:[], // 当前选中的自定义标签
   characters:[],  // [{id,name,card}]
@@ -825,7 +827,7 @@ function ld(){
   try{
     const d=JSON.parse(r);
     const _savedTheme=d.theme; // 先记下来
-    ['theme','presets','activeP','model','cfg','books','vocab','searchHistory','chatCache','characters','activeChars','worlds','activeWorld','writeLang','selCharTags','extraWords','customTags','selCustomTags','tagLang'].forEach(k=>{if(d[k]!==undefined)A[k]=d[k];});
+    ['theme','presets','activeP','model','cfg','books','vocab','searchHistory','chatCache','characters','activeChars','worlds','activeWorld','writeLang','selCharTags','extraWords','jlptCache','customTags','selCustomTags','tagLang'].forEach(k=>{if(d[k]!==undefined)A[k]=d[k];});
     // 标签：从存档里取用户自定义标签（不在DEFAULT里的），和DEFAULT合并
     const mergeCustomTags=(saved, defaults)=>{
       const custom=(saved||[]).filter(t=>!defaults.includes(t));
@@ -2426,6 +2428,11 @@ function renderChapter(idx){
 
   const vocabHtml='';
 
+  // JLPT词汇难度扫描（异步，渲染后执行）
+  if(A.writeLang==='jp'){
+    setTimeout(()=>scanChapterJlpt(idx), 500);
+  }
+
   // 本章评论（每章都有）
   let commentsHtml='';
   const chComments=ch.comments||[];
@@ -3224,6 +3231,202 @@ document.getElementById('write-btn-jp')?.addEventListener('click',()=>{
 });
 
 // 额外注入词汇
+// ════════════════════════════════════
+// JLPT章节扫描：文章渲染后标注N1/N2词汇
+// ════════════════════════════════════
+async function scanChapterJlpt(idx){
+  const body=document.getElementById('reader-body');
+  if(!body)return;
+  // 取所有段落文字，提取日文词（简单按汉字片段切割）
+  const paras=[...body.querySelectorAll('p[data-pi]')];
+  if(!paras.length)return;
+  const text=paras.map(p=>p.textContent).join('');
+  // 简单提取2-5字的汉字词（最可能是N1/N2词）
+  const candidates=[...new Set(text.match(/[一-龥ぁ-んァ-ン]{2,6}/g)||[])];
+  const alreadySaved=new Set(A.vocab.map(v=>v.word));
+  const toCheck=candidates.filter(w=>!alreadySaved.has(w)&&w.length>=2).slice(0,30);
+  if(!toCheck.length)return;
+
+  // 批量查JLPT级别（有缓存就用缓存，不发请求）
+  const n1n2words=[];
+  for(const w of toCheck){
+    const lv=A.jlptCache[w];
+    if(lv===1||lv===2) n1n2words.push({word:w,level:lv});
+    else if(lv===undefined){
+      // 未查过的，加入后台查询队列（不阻塞渲染）
+      lookupJlptLevel(w).then(l=>{
+        if(l===1||l===2){
+          // 如果是N1/N2，高亮这个词
+          highlightJlptWord(w,l);
+        }
+      });
+    }
+  }
+  // 已在缓存里的N1/N2立刻高亮
+  n1n2words.forEach(({word,level})=>highlightJlptWord(word,level));
+}
+
+function highlightJlptWord(word, level){
+  const body=document.getElementById('reader-body');
+  if(!body)return;
+  const alreadySaved=new Set(A.vocab.map(v=>v.word));
+  if(alreadySaved.has(word))return; // 已存词不重复标注
+  const label=level===1?'N1':'N2';
+  const color=level===1?'var(--red)':'#e8a030';
+  // 给所有段落里的该词加上N1/N2标注（不破坏ruby）
+  body.querySelectorAll('p[data-pi]').forEach(p=>{
+    if(!p.innerHTML.includes(word))return;
+    // 只处理text节点，不破坏已有span/ruby
+    const walker=document.createTreeWalker(p,NodeFilter.SHOW_TEXT);
+    const nodes=[];let n;
+    while(n=walker.nextNode())nodes.push(n);
+    nodes.forEach(node=>{
+      if(!node.textContent.includes(word))return;
+      const parts=node.textContent.split(word);
+      if(parts.length<2)return;
+      const frag=document.createDocumentFragment();
+      parts.forEach((part,i)=>{
+        frag.appendChild(document.createTextNode(part));
+        if(i<parts.length-1){
+          const span=document.createElement('span');
+          span.className='jlpt-word';
+          span.dataset.word=word;
+          span.dataset.level=level;
+          span.style.cssText='border-bottom:1.5px solid '+color+';cursor:pointer;position:relative';
+          span.textContent=word;
+          const badge=document.createElement('sup');
+          badge.style.cssText='font-size:9px;color:'+color+';margin-left:1px';
+          badge.textContent=label;
+          span.appendChild(badge);
+          span.addEventListener('click',(e)=>{
+            e.stopPropagation();
+            openVocabAddSheet(word);
+          });
+          frag.appendChild(span);
+        }
+      });
+      node.parentNode.replaceChild(frag,node);
+    });
+  });
+}
+
+// ════════════════════════════════════
+// 方案二：jReadability词汇难度分级（简化映射）
+// 难度1-2≈N4-N5, 3-4≈N2-N3, 5-6≈N1以上
+// 实际使用JLPT Vocab API：jlpt-vocab-api.vercel.app
+// 缓存在A.jlptCache里，按需拉取
+// ════════════════════════════════════
+
+// 根据词查询JLPT级别（带缓存）
+async function lookupJlptLevel(word){
+  if(!word||word.length<2) return null;
+  if(!A.jlptCache) A.jlptCache={};
+  if(A.jlptCache[word]!==undefined) return A.jlptCache[word];
+  try{
+    const res=await fetch(`https://jlpt-vocab-api.vercel.app/api/words/all?word=${encodeURIComponent(word)}`);
+    if(!res.ok){A.jlptCache[word]=null;return null;}
+    const data=await res.json();
+    const level=data?.level||data?.[0]?.level||null;
+    A.jlptCache[word]=level; // 1=N1, 2=N2, ...5=N5, null=不在JLPT
+    return level;
+  }catch{
+    A.jlptCache[word]=null;
+    return null;
+  }
+}
+
+// 批量查询一段文本里的词汇难度（用于生成后标注）
+// 返回 [{word, level}]
+async function batchLookupWords(words){
+  const results=[];
+  for(const w of words){
+    const lv=await lookupJlptLevel(w);
+    if(lv!==null) results.push({word:w, level:lv});
+  }
+  return results;
+}
+
+// ════════════════════════════════════
+// 领域词库生成
+// ════════════════════════════════════
+let domainWordsCache=[]; // [{word, ruby, cn, selected}]
+
+async function generateDomainWords(){
+  const input=document.getElementById('domain-input');
+  const btn=document.getElementById('domain-gen-btn');
+  const resultEl=document.getElementById('domain-result');
+  const labelEl=document.getElementById('domain-result-label');
+  const listEl=document.getElementById('domain-words-list');
+  const domain=input?.value.trim();
+  if(!domain){toast('请输入领域描述');return;}
+
+  btn.textContent='生成中…';btn.disabled=true;
+  resultEl.style.display='none';
+
+  try{
+    const p=getPreset();const model=getModel();
+    if(!p||!model){toast('请先设置API Key');return;}
+
+    const domainPrompt='请生成「'+domain+'」领域的日语词汇表。生成20-30个实用词汇，包含日语学习者可能不熟悉的词。每行一个词，格式：日文词|假名读音|中文释义。例如：洗剤|せんざい|洗涤剂。只输出词表，不要序号或解释。';
+    const res=await callAPIStream([{role:'user',content:domainPrompt}], 800);
+
+    // 解析词表
+    const lines=res.trim().split('\n').filter(l=>l.includes('|'));
+    domainWordsCache=lines.map(l=>{
+      const parts=l.split('|').map(s=>s.trim());
+      return {word:parts[0]||'',ruby:parts[1]||'',cn:parts[2]||'',selected:true};
+    }).filter(w=>w.word);
+
+    if(!domainWordsCache.length){toast('生成失败，请重试');return;}
+
+    labelEl.textContent=`${domainWordsCache.length}个词 · 勾选要注入的`;
+    renderDomainWordsList();
+    resultEl.style.display='block';
+
+  }catch(e){
+    toast('生成失败：'+e.message);
+  }finally{
+    btn.textContent='生成词表';btn.disabled=false;
+  }
+}
+
+function renderDomainWordsList(){
+  const listEl=document.getElementById('domain-words-list');
+  if(!listEl)return;
+  listEl.innerHTML='';
+  domainWordsCache.forEach((w,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;cursor:pointer;';
+    row.style.background=w.selected?'rgba(var(--acc-rgb,100,149,237),.1)':'transparent';
+    row.innerHTML=`
+      <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${w.selected?'var(--acc)':'var(--bdr)'};background:${w.selected?'var(--acc)':'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center">
+        ${w.selected?'<span style="color:#fff;font-size:10px">✓</span>':''}
+      </div>
+      <div style="flex:1;min-width:0">
+        <span style="font-family:'Noto Serif JP',serif;font-size:14px">${escH(w.word)}</span>
+        <span style="font-size:11px;color:var(--ink3);margin-left:6px">${escH(w.ruby)}</span>
+        <span style="font-size:11px;color:var(--ink2);margin-left:8px">${escH(w.cn)}</span>
+      </div>
+    `;
+    row.addEventListener('click',()=>{
+      domainWordsCache[i].selected=!domainWordsCache[i].selected;
+      renderDomainWordsList();
+    });
+    listEl.appendChild(row);
+  });
+}
+
+function addDomainWordsToExtra(){
+  const selected=domainWordsCache.filter(w=>w.selected&&w.word);
+  selected.forEach(w=>{
+    if(!A.extraWords.includes(w.word)) A.extraWords.push(w.word);
+  });
+  sv();renderExtraWords();
+  toast(`已加入${selected.length}个词`);
+  document.getElementById('domain-result').style.display='none';
+  domainWordsCache=[];
+}
+
 function renderExtraWords(){
   const el=document.getElementById('extra-words-tags');
   if(!el)return;
@@ -3247,6 +3450,17 @@ document.getElementById('extra-word-input')?.addEventListener('keydown',e=>{
   }
 });
 setTimeout(()=>renderExtraWords(),50);
+
+// 领域词库生成
+document.getElementById('domain-gen-btn')?.addEventListener('click', generateDomainWords);
+document.getElementById('domain-input')?.addEventListener('keydown', e=>{
+  if(e.key==='Enter'){e.preventDefault();generateDomainWords();}
+});
+document.getElementById('domain-add-all')?.addEventListener('click', addDomainWordsToExtra);
+document.getElementById('domain-clear')?.addEventListener('click',()=>{
+  document.getElementById('domain-result').style.display='none';
+  domainWordsCache=[];
+});
 
 // 标签库语言切换
 document.getElementById('lang-btn-jp')?.addEventListener('click',()=>{
