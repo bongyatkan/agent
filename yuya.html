@@ -117,11 +117,13 @@ body{font-family:'Noto Serif SC','Noto Serif JP',serif;transition:background .3s
 
 /* Chapter content */
 .ch-divider{text-align:center;color:var(--ink3);font-size:13px;letter-spacing:.3em;margin:20px 0}
-.cn-trans{display:block;font-size:11.5px;color:var(--ink3);font-style:italic;margin-top:1px;margin-bottom:10px;padding-left:.5em;line-height:1.5;letter-spacing:.01em}
+.cn-trans{display:block;font-size:11px;color:var(--ink3);opacity:.75;font-style:italic;margin-top:-8px;margin-bottom:14px;padding-left:.5em;line-height:1.6;letter-spacing:.01em}
 .word-saved{background:rgba(100,149,196,.15);border-radius:2px;border-bottom:1px solid #6495c4;cursor:pointer}
 .word-injected{background:rgba(196,149,106,.25);border-radius:2px;border-bottom:2px solid var(--acc3);cursor:pointer}
-.ch-content{font-size:16px;line-height:2.1;color:var(--ink);letter-spacing:.02em}
+.ch-content{font-size:16px;line-height:2.6;color:var(--ink);letter-spacing:.02em}
 .ch-content p{margin-bottom:1.2em;text-indent:1em}
+ruby{display:inline-flex;flex-direction:column-reverse;align-items:center;vertical-align:bottom;line-height:1}
+ruby rt{font-size:.55em;color:var(--ink3);line-height:1.2;text-align:center;letter-spacing:.02em}
 .ch-content p:hover{background:rgba(196,149,106,.07);border-radius:3px;cursor:pointer}
 .ch-content p.sel{background:rgba(196,149,106,.16);border-radius:3px}
 
@@ -619,6 +621,19 @@ body{font-family:'Noto Serif SC','Noto Serif JP',serif;transition:background .3s
           <span style="font-size:16px">★</span><span>简单</span><span id="rb-easy-time" style="font-size:10px;opacity:.7"></span>
         </button>
       </div>
+    </div>
+
+    <!-- 造句区（评分后随机触发） -->
+    <div id="rf-compose" style="display:none;background:var(--surface);border-radius:16px;padding:16px;flex-direction:column;gap:10px">
+      <div style="font-size:13px;color:var(--ink2)">✏️ 用「<span id="rfc-word" style="color:var(--acc3);font-family:'Noto Serif JP',serif"></span>」造一个句子</div>
+      <div style="font-size:11px;color:var(--ink3);line-height:1.6">用日语写，哪怕很短也可以。AI会批改语法和用法。</div>
+      <textarea id="rfc-input" rows="3" style="border:1.5px solid var(--bdr);border-radius:10px;padding:10px;font-size:14px;font-family:'Noto Serif JP',serif;background:var(--surface2);color:var(--ink);outline:none;width:100%;resize:none;line-height:1.8" placeholder="例：彼女は窓の外を見つめた。"></textarea>
+      <div style="display:flex;gap:8px">
+        <button id="rfc-submit" style="flex:1;background:var(--acc);border:none;border-radius:10px;padding:10px;font-size:13px;font-family:inherit;color:#fff;cursor:pointer">提交批改</button>
+        <button id="rfc-skip" style="background:none;border:1px solid var(--bdr);border-radius:10px;padding:10px 14px;font-size:13px;font-family:inherit;color:var(--ink3);cursor:pointer">跳过</button>
+      </div>
+      <div id="rfc-feedback" style="display:none;background:var(--surface2);border-radius:10px;padding:12px;font-size:13px;line-height:1.8;color:var(--ink2)"></div>
+      <button id="rfc-next" style="display:none;background:none;border:1px solid var(--bdr);border-radius:10px;padding:10px;font-size:13px;font-family:inherit;color:var(--ink2);cursor:pointer">继续复习 →</button>
     </div>
   </div>
 
@@ -3126,9 +3141,11 @@ document.getElementById('va-save-btn')?.addEventListener('click',()=>{
   A.pendingVocabSentence='';
   // 清理例句：去掉振假名读音（汉字后面跟着的假名）
   const cleanSentence=sentence
-    .replace(/[一-龥々]{1,8}([ぁ-ん]{1,8})/g,(m,r)=>m.replace(r,'')) // 去掉汉字后跟的假名（rt残留）
-    .replace(/（[^（）]{1,100}）/g,'') // 去掉中文翻译括号
-    .trim();
+    .replace(/<rt>[^<]*<\/rt>/g,'') // 只删ruby读音标注
+    .replace(/<\/?ruby>/g,'')        // 删ruby标签
+    .replace(/<\/?[a-z][^>]*>/g,'') // 删其他HTML标签
+    .replace(/（[^（）]{1,100}）/g,'') // 删中文翻译括号
+    .replace(/\s+/g,' ').trim();
   const now=Date.now();
   A.vocab.push({
     id:'v'+now,word,ruby,cn,
@@ -3413,26 +3430,40 @@ function flipCard(){
 }
 
 function rateCard(q){
-  // q: 1=不会 2=困难 3=还行 4=简单
-  if(!reviewFlipped)return; // 必须翻转后才能评分
-
+  if(!reviewFlipped)return;
   answerSRS(reviewCurrentId, q);
 
   if(q===1){
-    // 不会：把这张牌放回队列末尾
     reviewStats.again++;
     reviewStats.streak=0;
     const v=reviewQueue[reviewIdx];
-    reviewQueue.push(v); // 加到末尾待重复
+    reviewQueue.push(v);
     reviewIdx++;
+    showFlipCard();
   } else {
     reviewStats.good++;
     reviewStats.streak++;
     if(reviewStats.streak>reviewStats.maxStreak)reviewStats.maxStreak=reviewStats.streak;
     reviewIdx++;
+    // 评分3/4时，每隔3张随机触发一次造句（不要每张都有，太烦）
+    const shouldCompose=(q>=3)&&(reviewStats.good%3===0);
+    if(shouldCompose){
+      showComposeCard();
+    } else {
+      showFlipCard();
+    }
   }
+}
 
-  showFlipCard();
+function showComposeCard(){
+  const v=reviewQueue[reviewIdx-1]; // 刚刚评分的词
+  if(!v){showFlipCard();return;}
+  document.getElementById('rf-buttons').style.display='none';
+  document.getElementById('rf-compose').style.display='flex';
+  document.getElementById('rfc-word').textContent=v.word||'';
+  document.getElementById('rfc-input').value='';
+  document.getElementById('rfc-feedback').style.display='none';
+  document.getElementById('rfc-next').style.display='none';
 }
 
 function showReviewDone(){
@@ -3449,6 +3480,38 @@ function showReviewDone(){
   document.getElementById('review-done-stats').textContent=statsText;
   document.getElementById('review-bar').style.width='100%';
 }
+
+// 造句提交
+document.getElementById('rfc-submit')?.addEventListener('click',async()=>{
+  const word=document.getElementById('rfc-word').textContent;
+  const sentence=document.getElementById('rfc-input').value.trim();
+  const fbEl=document.getElementById('rfc-feedback');
+  const nextBtn=document.getElementById('rfc-next');
+  if(!sentence){toast('请先写一个句子');return;}
+  fbEl.textContent='批改中…';fbEl.style.display='block';
+  try{
+    const p=getPreset();const model=getModel();
+    const res=await callAPIStream([{role:'user',content:`请批改这个日语句子是否正确使用了「${word}」。
+学习者写的句子：${sentence}
+
+请用中文回复，简短说明：①语法是否正确②「${word}」用法是否自然③如有错误给出修正版本。控制在3句以内。`}],300);
+    fbEl.innerHTML=res.replace(/\n/g,'<br>');
+    fbEl.style.display='block';
+    nextBtn.style.display='block';
+  }catch(e){
+    fbEl.textContent='批改失败，直接继续';
+    fbEl.style.display='block';
+    nextBtn.style.display='block';
+  }
+});
+document.getElementById('rfc-skip')?.addEventListener('click',()=>{
+  document.getElementById('rf-compose').style.display='none';
+  showFlipCard();
+});
+document.getElementById('rfc-next')?.addEventListener('click',()=>{
+  document.getElementById('rf-compose').style.display='none';
+  showFlipCard();
+});
 
 // 复习关闭按钮
 document.getElementById('review-close')?.addEventListener('click',()=>{
