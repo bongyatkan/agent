@@ -370,7 +370,7 @@ ruby rt{font-size:.55em;color:var(--ink3);line-height:1.2;text-align:center;lett
           </div>
         </div>
 
-        <!-- 搜索历史 -->
+        <!-- 搜索历史（保留，探索页显示历史记录） -->
         <div id="history-section" style="display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <div style="font-size:11px;color:var(--ink3);letter-spacing:.1em">搜索历史</div>
@@ -379,24 +379,63 @@ ruby rt{font-size:.55em;color:var(--ink3);line-height:1.2;text-align:center;lett
           <div id="history-list" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
 
-        <!-- 结果 -->
-        <div id="results-section" style="display:none;flex-direction:column;gap:10px">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <div style="flex:1;font-size:11px;color:var(--ink3)" id="results-label">第1页 · 5篇梗概</div>
-            <button class="tbtn" id="next-page-btn" style="font-size:12px">下一页 →</button>
-            <button class="tbtn" id="regen-btn" style="font-size:12px;color:var(--red)">重新生成</button>
-          </div>
-          <div id="outline-inject-preview" style="display:none;flex-wrap:wrap;gap:6px;align-items:center"></div>
-          <div id="search-results" style="display:flex;flex-direction:column;gap:12px"></div>
-        </div>
-
         <!-- 隐藏控件 -->
         <input type="checkbox" id="vocab-inject-toggle" style="display:none">
         <div id="vocab-inject-preview" style="display:none"></div>
         <div id="vocab-inject-count" style="display:none"></div>
-        <button class="generate-btn" id="gen-full-btn" style="display:none">📖 生成完整正文</button>
       </div>
     </div>
+  </div>
+
+  <!-- 书架 TAB -->
+  <div id="tab-shelf" style="flex:1;display:none;flex-direction:column;overflow:hidden">
+    <div class="body" style="flex:1">
+      <div class="body-pad" id="shelf-list"></div>
+    </div>
+  </div>
+
+  <!-- 词库 TAB -->
+  <div id="tab-vocab" style="flex:1;overflow:hidden;display:none;flex-direction:column">
+    <div class="vocab-filter" style="flex-shrink:0">
+      <button class="vf-btn on" data-vf="all">全部</button>
+      <button class="vf-btn" data-vf="learning">学习中</button>
+      <button class="vf-btn" data-vf="mastered">已掌握</button>
+    </div>
+    <div style="margin:10px 14px 0;display:flex;flex-direction:column;gap:8px" id="vocab-actions">
+      <div id="srs-banner" style="display:none;background:var(--acc2);border-radius:10px;padding:12px 16px;cursor:pointer">
+        <div style="font-size:14px;color:var(--ink);letter-spacing:.03em">✦ 今日复习 <span id="srs-count" style="font-weight:500">0</span> 个词</div>
+        <div style="font-size:11px;color:var(--ink2);margin-top:3px">点击开始</div>
+      </div>
+      <div id="regen-banner" style="display:none;background:var(--surface2);border:1px solid var(--bdr);border-radius:10px;padding:12px 16px;cursor:pointer">
+        <div style="font-size:14px;color:var(--ink)">♻ 用词库生词再生成同人文</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:3px" id="regen-banner-info">加载中…</div>
+      </div>
+    </div>
+    <div class="body" style="flex:1">
+      <div class="body-pad" id="vocab-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 搜索结果页 ══ -->
+<div class="scr off" id="scr-results">
+  <div class="tbar">
+    <button class="tbtn" id="btn-back-results">← 返回</button>
+    <div style="flex:1;font-size:13px;color:var(--ink2)" id="results-title">搜索结果</div>
+    <button class="tbtn" id="next-page-btn" style="font-size:12px">下一页</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="body-pad">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <div style="flex:1;font-size:11px;color:var(--ink3)" id="results-label">第1页 · 5篇梗概</div>
+        <button class="tbtn" id="regen-btn" style="font-size:12px;color:var(--red)">重新生成</button>
+      </div>
+      <div id="outline-inject-preview" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px"></div>
+      <div id="search-results" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+  </div>
+  <div style="padding:12px 14px;background:var(--bg);border-top:1px solid var(--bdr)">
+    <button class="generate-btn" id="gen-full-btn">📖 生成完整正文</button>
   </div>
 </div>
 
@@ -1272,7 +1311,8 @@ function getJpLevelPrompt(){
 
 async function generateOutlines(forceNew=false){
   const btn=document.getElementById('search-btn');
-  document.getElementById('gen-full-btn').style.display='none';
+  const _gfb=document.getElementById('gen-full-btn');if(_gfb)_gfb.style.display='none';
+
   A.selectedResult=null;
 
   const tagKey=getTagKey();
@@ -1290,7 +1330,8 @@ async function generateOutlines(forceNew=false){
   }
 
   btn.disabled=true;btn.textContent='生成中…';
-  document.getElementById('results-section').style.display='none';
+  // results now in separate screen
+
 
   const charName=A.cfg.charName||'角色';
   const customSel=A.selCustomTags.length?A.selCustomTags.join('、'):'';
@@ -1405,11 +1446,12 @@ STATS:hits数字/kudos数字/bookmarks数字/comments数字/chapters数字/endin
     sv();
     renderOutlines();
     const hist=A.searchHistory.find(h=>h.id===A.curHistoryId);
-    showResultsSection(hist);
+    const titleEl=document.getElementById('results-title');
+    if(titleEl)titleEl.textContent=hist?.label||'搜索结果';
     renderHistoryList();
     updateVocabInjectPreview();
-    const _ip=document.getElementById('outline-inject-preview');
-    if(_ip)_ip.style.display='none';
+    // 跳到独立结果页
+    showScr('results');
     const ip=document.getElementById('outline-inject-preview');
     if(ip)ip.style.display='none';
   }catch(e){
@@ -1419,10 +1461,12 @@ STATS:hits数字/kudos数字/bookmarks数字/comments数字/chapters数字/endin
 }
 
 function showResultsSection(hist){
-  const sec=document.getElementById('results-section');
-  sec.style.display='flex';
-  document.getElementById('results-label').textContent=`第${hist?.page||1}页 · ${hist?.results?.length||0}篇梗概`;
-  // 显示本次使用的injectWords
+  // 更新结果页标题和标签
+  const titleEl=document.getElementById('results-title');
+  if(titleEl)titleEl.textContent=hist?.label||'搜索结果';
+  const labelEl=document.getElementById('results-label');
+  if(labelEl)labelEl.textContent=`第${(A.curPage||0)+1}页`;
+  // 带入词汇预览
   const injectPreview=document.getElementById('outline-inject-preview');
   if(injectPreview){
     const words=hist?.injectWords||[];
@@ -1434,6 +1478,9 @@ function showResultsSection(hist){
       injectPreview.style.display='none';
     }
   }
+  const genBtn=document.getElementById('gen-full-btn');
+  if(genBtn)genBtn.style.display='none';
+  A.selectedResult=null;
 }
 
 function renderHistoryList(){
@@ -1456,7 +1503,9 @@ function renderHistoryList(){
     div.addEventListener('click',e=>{
       if(e.target.dataset.hid){
         A.searchHistory=A.searchHistory.filter(x=>x.id!==e.target.dataset.hid);
-        if(A.curHistoryId===e.target.dataset.hid){A.curHistoryId=null;A.searchResults=[];document.getElementById('results-section').style.display='none';document.getElementById('gen-full-btn').style.display='none';}
+        if(A.curHistoryId===e.target.dataset.hid){A.curHistoryId=null;A.searchResults=[];// results now in separate screen
+const _gfb=document.getElementById('gen-full-btn');if(_gfb)_gfb.style.display='none';
+}
         sv();renderHistoryList();
         return;
       }
@@ -1466,6 +1515,7 @@ function renderHistoryList(){
       A.curPage=0;
       renderOutlines();
       showResultsSection(h);
+      showScr('results');
     });
     list.appendChild(div);
   });
@@ -2946,11 +2996,7 @@ function showTab(name){
   ['search','shelf','vocab'].forEach(n=>{
     const el=document.getElementById('tab-'+n);
     if(!el)return;
-    if(n===name){
-      el.style.display=n==='vocab'?'flex':'block';
-    } else {
-      el.style.display='none';
-    }
+    el.style.display=(n===name)?'flex':'none';
   });
   if(name==='shelf')renderShelf();
   if(name==='vocab'){renderVocabList();updateVocabInjectPreview();}
@@ -3069,13 +3115,16 @@ document.getElementById('regen-btn')?.addEventListener('click',()=>{
 document.getElementById('clear-history-btn')?.addEventListener('click',()=>{
   if(!confirm('清空全部搜索历史？'))return;
   A.searchHistory=[];A.curHistoryId=null;A.searchResults=[];
-  document.getElementById('results-section').style.display='none';
-  document.getElementById('gen-full-btn').style.display='none';
+  // results now in separate screen
+
+  const _gfb=document.getElementById('gen-full-btn');if(_gfb)_gfb.style.display='none';
+
   sv();renderHistoryList();toast('历史已清空');
 });
 document.getElementById('gen-full-btn')?.addEventListener('click',generateFull);
 
 document.getElementById('btn-back-reader')?.addEventListener('click',()=>{showScr('search');showTab('shelf');});
+document.getElementById('btn-back-results')?.addEventListener('click',()=>{showScr('search');showTab('search');});
 document.getElementById('btn-fav')?.addEventListener('click',()=>{
   const book=A.books.find(b=>b.id===A.curBook);
   if(!book)return;
